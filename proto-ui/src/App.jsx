@@ -994,7 +994,7 @@ function getActorProductPriceOptions(product, actor, productIndex = 0) {
       category: category.code,
       calibre: calibre.code,
       price: `$${basePrice + index * 4}`,
-      photo: index === 0 ? actor.photo ?? null : null,
+      photo: ((product.id * 7 + index * 3) % 5 < 2) ? actor.photo ?? product.image : null,
     }
   })
 }
@@ -1455,7 +1455,7 @@ function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebro
       </section>
 
       <section className="provider-products">
-        <div className="provider-products-heading"><div><p>Publicaciones de hoy</p><h2>Productos y precios</h2></div><span>{visibleProducts.length} productos</span>{editable && <button className="provider-add" type="button" onClick={onCreate} aria-label="Agregar producto"><Plus size={19} /></button>}</div>
+        <div className="provider-products-heading"><div><p>Publicaciones de hoy</p><h2>Productos y precios</h2></div><span>{visibleProducts.length} productos</span>{editable && <button className="provider-add" type="button" onClick={() => onCreate()} aria-label="Agregar producto"><Plus size={19} /></button>}</div>
         <ListFilterToolbar query={query} setQuery={setQuery} placeholder="Buscar producto" activeFilterCount={activeFilterCount} onClear={() => { setPriceFilter('all'); setVarietyFilter('all'); setPresentationFilter('all'); setCalibreFilter('all'); setCategoryFilter('all'); setNaveFilter('all'); setUnitFilter('all'); setSortBy('name') }} className="provider-product-tools">
           <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Nombre' }, { value: 'priceAsc', label: 'Menor precio' }, { value: 'priceDesc', label: 'Mayor precio' }]} />
           <ProductFilterFields priceFilter={priceFilter} setPriceFilter={setPriceFilter} varietyFilter={varietyFilter} setVarietyFilter={setVarietyFilter} presentationFilter={presentationFilter} setPresentationFilter={setPresentationFilter} calibreFilter={calibreFilter} setCalibreFilter={setCalibreFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} naveFilter={naveFilter} setNaveFilter={setNaveFilter} unitFilter={unitFilter} setUnitFilter={setUnitFilter} />
@@ -1644,19 +1644,6 @@ function AdminEditorPanel({ kind, item, onClose, onSave }) {
   )
 }
 
-function DeleteConfirmationPanel({ item, onClose, onConfirm }) {
-  return (
-    <DrawerShell onClose={onClose} labelledBy="delete-title" className="delete-panel">
-      {(swipeProps) => <>
-        <header className="delete-panel-header" {...swipeProps}><i className="actor-panel-handle" aria-hidden="true" /><p>Confirmar baja</p><h2 id="delete-title">Eliminar {item.name}</h2><span>Esta acción quitará el registro del sistema.</span></header>
-        <div className="delete-panel-content">
-          <button className="danger-submit" type="button" onClick={onConfirm}>Confirmar eliminación <Trash2 size={18} /></button><button className="text-action" type="button" onClick={onClose}>Cancelar</button>
-        </div>
-      </>}
-    </DrawerShell>
-  )
-}
-
 function AdminSmartListPage({ items, onEdit, onDelete, onCreate }) {
   const [query, setQuery] = useState('')
   const [sortBy, setSortBy] = useState('name')
@@ -1828,6 +1815,7 @@ function App() {
   const confirmAdminDelete = () => {
     if (deleteTarget.kind === 'operator') setAdminOperators((current) => current.filter((entry) => entry.id !== deleteTarget.item.id))
     if (deleteTarget.kind === 'producer') setAdminProducers((current) => current.filter((entry) => entry.id !== deleteTarget.item.id))
+    if (deleteTarget.kind === 'smart') setAdminSmartItems((current) => current.filter((entry) => entry.id !== deleteTarget.item.id))
     setDeleteTarget(null)
   }
 
@@ -1852,7 +1840,7 @@ function App() {
       {view === 'absentProvider' && <AbsentOperatorPage operator={operatorDirectory[0]} vacation={vacation} onBack={() => navigate('operators')} onOpenSubstitute={() => vacation.substitute && openDirectoryMarket(vacation.substitute, 'provider', 'absentProvider')} />}
       {view === 'adminOperators' && <AdminManagementPage kind="operator" items={adminOperators} onCreate={() => setAdminEditor({ kind: 'operator', item: null })} onEdit={(item) => setAdminEditor({ kind: 'operator', item })} onDelete={(item) => setDeleteTarget({ kind: 'operator', item })} />}
       {view === 'adminProducers' && <AdminManagementPage kind="producer" items={adminProducers} onCreate={() => setAdminEditor({ kind: 'producer', item: null })} onEdit={(item) => setAdminEditor({ kind: 'producer', item })} onDelete={(item) => setDeleteTarget({ kind: 'producer', item })} />}
-      {view === 'adminSmartList' && <AdminSmartListPage items={adminSmartItems} onCreate={() => setSmartEditor({ item: null })} onEdit={(item) => setSmartEditor({ item })} onDelete={(item) => setAdminSmartItems((current) => current.filter((entry) => entry.id !== item.id))} />}
+      {view === 'adminSmartList' && <AdminSmartListPage items={adminSmartItems} onCreate={() => setSmartEditor({ item: null })} onEdit={(item) => setSmartEditor({ item })} onDelete={(item) => setDeleteTarget({ kind: 'smart', item })} />}
       {view === 'adminRecovery' && <RecoveryRequestsPage items={recoveryRequests} onResolve={(id) => setRecoveryRequests((current) => current.map((item) => item.id === id ? { ...item, status: 'Resuelta' } : item))} />}
       {view === 'adminRevaluation' && <PriceRevaluationPage />}
       {view === 'editPrice' && <EditPrice product={editingProduct ?? { ...products[0], ...(catalogOverrides[products[0].id] ?? {}) }} onSave={(nextProduct) => { setCatalogOverrides((current) => ({ ...current, [nextProduct.id]: nextProduct })); navigate(editReturnView) }} onCancel={() => navigate(editReturnView)} />}
@@ -1861,7 +1849,7 @@ function App() {
         : <ActorPanel key={drawer.drawerId} entry={drawer.entry} role={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenPage={() => openDirectoryMarket(drawer.entry, drawer.role === 'producer' ? 'producerDetail' : 'provider', drawer.backView)} onOpenProduct={(product, role) => openProductDrawer(product, role)} />)}
       {publicationDrawer && <PublicationPanel items={catalogItems} initialProduct={publicationDrawer.product} onClose={() => setPublicationDrawer(null)} onSave={(matchedProduct, draftProduct) => { if (matchedProduct && draftProduct) { setCatalogProductIds((current) => current.includes(matchedProduct.id) ? current : [...current, matchedProduct.id]); setCatalogOverrides((current) => ({ ...current, [matchedProduct.id]: draftProduct })) } else if (draftProduct) setCustomCatalogItems((current) => [...current, draftProduct]); setPublicationDrawer(null) }} />}
       {adminEditor && <AdminEditorPanel kind={adminEditor.kind} item={adminEditor.item} onClose={() => setAdminEditor(null)} onSave={(item) => saveAdminItem(adminEditor.kind, item)} />}
-      {deleteTarget && <DeleteConfirmationPanel item={deleteTarget.item} onClose={() => setDeleteTarget(null)} onConfirm={confirmAdminDelete} />}
+      {deleteTarget && <ConfirmModal heading={`Eliminar ${deleteTarget.kind === 'smart' ? deleteTarget.item.product.name : deleteTarget.item.name}`} description={deleteTarget.kind === 'smart' ? 'El producto dejará de aparecer en la lista inteligente.' : `Se eliminará el registro de este ${deleteTarget.kind === 'operator' ? 'operador' : 'productor'} del sistema.`} confirmLabel={deleteTarget.kind === 'smart' ? 'Eliminar recomendación' : `Eliminar ${deleteTarget.kind === 'operator' ? 'operador' : 'productor'}`} onCancel={() => setDeleteTarget(null)} onConfirm={confirmAdminDelete} />}
       {smartEditor && <SmartRecommendationPanel item={smartEditor.item} availableProducts={externalProducts} onClose={() => setSmartEditor(null)} onSave={(item) => { setAdminSmartItems((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setSmartEditor(null) }} />}
     </div>
   )

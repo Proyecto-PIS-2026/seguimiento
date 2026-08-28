@@ -517,18 +517,12 @@ h1 em { color: var(--green); font-style: normal; }
 .excel-file-summary strong { font-size: var(--font-size-sm); }
 .excel-file-summary small { color: var(--muted); font-size: var(--font-size-xs); }
 .excel-file-summary button { width: 36px; height: 36px; padding: 0; display: grid; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--green-dark); cursor: pointer; }
-.delete-panel-header { min-height: 280px; padding: 88px 30px 34px; display: flex; flex-direction: column; justify-content: flex-end; background: #7d2d27; color: var(--color-text-inverse); }
-.delete-panel-header p { margin: 0 0 10px; color: var(--color-text-danger-inverse); font-size: var(--font-size-xs); font-weight: var(--font-weight-black); text-transform: uppercase; letter-spacing: .12em; }
-.delete-panel-header h2 { margin: 0; font-size: var(--font-size-4xl); line-height: .95; letter-spacing: -.05em; }
-.delete-panel-header span { margin-top: 16px; color: var(--color-text-danger-inverse-muted); font-size: var(--font-size-sm); line-height: 1.5; }
-.delete-panel-content { padding: 28px 30px 48px; }
 .affected-actors { display: grid; gap: 20px; }
 .affected-actors section { display: grid; border-top: 1px solid var(--line); }
 .affected-actors h3 { margin: 18px 0 9px; font-size: var(--font-size-md); }
 .affected-actors section > span { padding: 9px 0; display: flex; flex-direction: column; gap: 3px; border-bottom: 1px solid var(--line); }
 .affected-actors strong { font-size: var(--font-size-sm); }
 .affected-actors small { color: var(--muted); font-size: var(--font-size-xs); }
-.danger-submit { width: 100%; min-height: 50px; margin-top: 26px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: var(--radius-control); background: #9d352d; color: var(--color-text-inverse); font-size: var(--font-size-sm); font-weight: var(--font-weight-black); text-transform: uppercase; cursor: pointer; }
 .provider-products { padding: 66px clamp(26px, 6vw, 88px); background: white; }
 .provider-products-heading { margin-bottom: 28px; display: flex; align-items: end; justify-content: space-between; gap: 20px; }
 .provider-products-heading p { margin: 0 0 8px; color: var(--green); font-size: var(--font-size-xs); font-weight: var(--font-weight-black); text-transform: uppercase; letter-spacing: .11em; }
