@@ -731,7 +731,7 @@ function OperatorOfferCard({ operator, product, actionLayout = 'rail', onOpen = 
     <article className={`operator-row actions-${actionLayout}`} role="button" tabIndex="0" onClick={onOpen} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }} aria-label={`Abrir mercado de ${operator.name}`}>
       {operator.offerPhoto ? <button className="operator-offer-photo" type="button" onClick={(event) => { event.stopPropagation(); onOpenMedia({ src: operator.offerPhoto, alt: `Mercadería aportada por ${operator.name}` }) }} aria-label={`Ampliar foto de ${operator.name}`}><img src={operator.offerPhoto} alt="" /></button> : <span className="operator-offer-photo empty" aria-label="Sin imagen">Sin imagen</span>}
       <div className="operator-identity"><h4>{operator.name}</h4><span>{operator.place}</span></div>
-      <div className="operator-price-list">{operator.priceOptions.map((option) => <span key={option.key}><small>{option.label}</small><strong><b>{option.price}</b><em>/ {option.unit}</em></strong></span>)}</div>
+      <div className="operator-price-list">{operator.priceOptions.map((option) => <span key={option.key}><small>{option.label} · {option.unit}</small><strong><b>{option.price}</b></strong></span>)}</div>
       <div className={`offer-actions ${actionLayout}`}>
         <button type="button" onClick={(event) => event.stopPropagation()} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button>
         <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => { event.stopPropagation(); if (preview) event.preventDefault() }} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a>
@@ -926,7 +926,7 @@ function ActorPanel({ entry, role, onClose, onOpenPage, onOpenProduct }) {
           <div className="actor-product-list">
             {actorProducts.map((product, index) => {
               const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
-              const priceOptions = getOperatorPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, index)
+              const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, index)
               return <button className="has-price-options" type="button" key={product.id} onClick={() => onOpenProduct(product, role)}>
                 <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
                 <span className="actor-product-copy"><strong>{product.name}</strong><span className="actor-product-price-list">{priceOptions.map((option) => <span key={option.key}><small>{option.variety} · Cat. {option.category} · {option.calibre} · {option.unit}</small><b>{option.price}</b></span>)}</span></span>
@@ -1000,6 +1000,28 @@ function getOperatorPriceOptions(product, operator, operatorIndex = 0) {
       price: `$${numericPrice}`,
       numericPrice,
       unit: unit?.code ?? entry.unit,
+    }
+  })
+}
+
+function getActorProductPriceOptions(product, actor, productIndex = 0) {
+  const definition = productWebserviceCatalog.find((entry) => entry.id === (product.sourceProductId ?? product.id))
+  if (!definition) return []
+  const seed = [...`${actor.name ?? 'actor'}-${product.id}-${productIndex}`].reduce((total, character) => total + character.charCodeAt(0), 0)
+  const optionCount = 2 + (seed % 6)
+  const basePrice = Number(actor.price?.match(/\d+/)?.[0] ?? product.price.match(/\d+/)?.[0] ?? 0)
+  return Array.from({ length: optionCount }, (_, index) => {
+    const variety = definition.varieties[(seed + index) % definition.varieties.length]
+    const unit = definition.units[(seed + index * 2) % definition.units.length]
+    const calibre = definition.calibres[(seed + index * 3) % definition.calibres.length]
+    const category = definition.categories[(seed + index) % definition.categories.length]
+    return {
+      key: `${product.id}-${variety}-${unit.code}-${category.code}-${calibre.code}-${index}`,
+      variety,
+      unit: unit.code,
+      category: category.code,
+      calibre: calibre.code,
+      price: `$${basePrice + index * 4}`,
     }
   })
 }
