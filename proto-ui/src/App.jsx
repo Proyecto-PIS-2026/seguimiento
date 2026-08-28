@@ -1778,17 +1778,35 @@ function App() {
     applyRoute({ view: nextView, smartList: path === '/lista-inteligente' })
   }
 
+  const usesDesktopPages = () => window.matchMedia('(min-width: 761px)').matches
+  const openProductPage = (product, role = 'operator', backView = view) => {
+    setProductPage({ product, role, backView })
+    setEntityDrawerStack([])
+    setView('productDetail')
+    window.history.pushState({ view: 'productDetail' }, '', `/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`)
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
+
   const openProductDrawer = (product, role = 'operator') => {
+    if (usesDesktopPages()) {
+      openProductPage(product, role)
+      return
+    }
     drawerSequence.current += 1
     setEntityDrawerStack((current) => [...current, { drawerId: drawerSequence.current, type: 'product', product, role }])
   }
 
   const openActorFromProduct = (operator, product, role = 'operator') => {
+    const entry = { ...operator, product, productCount: role === 'producer' ? operator.productCount ?? 1 : products.length }
+    if (usesDesktopPages()) {
+      openDirectoryMarket(entry, role === 'producer' ? 'producerDetail' : 'provider', view)
+      return
+    }
     drawerSequence.current += 1
     setEntityDrawerStack((current) => [...current, {
       drawerId: drawerSequence.current,
       type: 'actor',
-      entry: { ...operator, product, productCount: role === 'producer' ? operator.productCount ?? 1 : products.length },
+      entry,
       role,
       backView: view,
     }])
@@ -1845,7 +1863,7 @@ function App() {
       {view === 'adminRevaluation' && <PriceRevaluationPage />}
       {view === 'editPrice' && <EditPrice product={editingProduct ?? { ...products[0], ...(catalogOverrides[products[0].id] ?? {}) }} onSave={(nextProduct) => { setCatalogOverrides((current) => ({ ...current, [nextProduct.id]: nextProduct })); navigate(editReturnView) }} onCancel={() => navigate(editReturnView)} />}
       {entityDrawerStack.map((drawer) => drawer.type === 'product'
-        ? <ProductPanel key={drawer.drawerId} product={drawer.product} actorRole={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenProvider={openActorFromProduct} onOpenPage={(product, role) => { setProductPage({ product, role, backView: view }); setEntityDrawerStack([]); setView('productDetail'); window.history.pushState({ view: 'productDetail' }, '', `${role === 'producer' ? '/operador' : ''}/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`); window.scrollTo({ top: 0, behavior: 'auto' }) }} />
+        ? <ProductPanel key={drawer.drawerId} product={drawer.product} actorRole={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenProvider={openActorFromProduct} onOpenPage={(product, role) => openProductPage(product, role)} />
         : <ActorPanel key={drawer.drawerId} entry={drawer.entry} role={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenPage={() => openDirectoryMarket(drawer.entry, drawer.role === 'producer' ? 'producerDetail' : 'provider', drawer.backView)} onOpenProduct={(product, role) => openProductDrawer(product, role)} />)}
       {publicationDrawer && <PublicationPanel items={catalogItems} initialProduct={publicationDrawer.product} onClose={() => setPublicationDrawer(null)} onSave={(matchedProduct, draftProduct) => { if (matchedProduct && draftProduct) { setCatalogProductIds((current) => current.includes(matchedProduct.id) ? current : [...current, matchedProduct.id]); setCatalogOverrides((current) => ({ ...current, [matchedProduct.id]: draftProduct })) } else if (draftProduct) setCustomCatalogItems((current) => [...current, draftProduct]); setPublicationDrawer(null) }} />}
       {adminEditor && <AdminEditorPanel kind={adminEditor.kind} item={adminEditor.item} onClose={() => setAdminEditor(null)} onSave={(item) => saveAdminItem(adminEditor.kind, item)} />}
