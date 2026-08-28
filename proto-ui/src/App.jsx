@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   CalendarDays,
   Camera,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -14,6 +13,7 @@ import {
   Eye,
   EyeOff,
   FileSpreadsheet,
+  Image as ImageIcon,
   ImagePlus,
   KeyRound,
   MapPin,
@@ -194,7 +194,6 @@ const staticViewRoutes = {
   adminSmartList: '/administracion/lista-inteligente',
   adminRecovery: '/administracion/recuperacion-de-cuentas',
   adminRevaluation: '/administracion/revalorizacion-de-precios',
-  variants: '/variantes',
 }
 
 const initialRecoveryRequests = Array.from({ length: 12 }, (_, index) => ({
@@ -324,7 +323,6 @@ function Header({ view, onNavigate, isAuthenticated, onLogout }) {
     { title: 'Productor', items: [{ label: 'Ver su mercado', view: 'producerMarket' }] },
     { title: 'Administrador', items: [{ label: 'Mantenimiento de operadores', view: 'adminOperators' }, { label: 'Mantenimiento de productores', view: 'adminProducers' }, { label: 'Mantenimiento de lista inteligente', view: 'adminSmartList' }, { label: 'Solicitudes de recuperación', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }] },
     { title: 'Seguridad', items: [{ label: 'Ingresar', view: 'login' }, { label: 'Ingresar con 2FA', view: 'twoFactorChallenge' }, { label: 'Configurar 2FA', view: 'twoFactorSetup' }, { label: 'Recuperar contraseña', view: 'recovery' }, { label: 'Restablecer contraseña', view: 'resetPassword' }] },
-    { title: 'Prototipo', items: [{ label: 'Variantes', view: 'variants' }] },
   ]
   const openPrototypeItem = (item) => {
     setDesktopMenuOpen(false)
@@ -364,55 +362,6 @@ function Header({ view, onNavigate, isAuthenticated, onLogout }) {
       </div>
     </>
   )
-}
-
-function ProductListItem({ product, price = product.price, status, onOpen, actions, actionLayout = 'current', showUnit = true }) {
-  const displayedPrice = price || 'Sin precio'
-  const showsUnit = showUnit && displayedPrice !== 'Sin precio'
-
-  return (
-    <article className={actions ? `product-list-item has-actions actions-${actionLayout}` : 'product-list-item'}>
-      <button className="product-list-main" type="button" onClick={onOpen}>
-        <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
-        <span className="product-list-copy"><strong>{product.name}</strong><small>{product.detail}</small></span>
-        {status && <span className="product-list-status">{status}</span>}
-        <span className="product-list-price"><strong>{displayedPrice}</strong>{showsUnit && <small>{product.unit}</small>}</span>
-        <ChevronRight size={19} aria-hidden="true" />
-      </button>
-      {actions && <div className="product-list-actions">{actions}</div>}
-    </article>
-  )
-}
-
-const boardCardVariantStorageKey = 'mercado-hoy:board-card-actions'
-const validBoardCardVariants = ['current', 'icons-top-right']
-
-function readStoredBoardCardVariant() {
-  const stored = window.localStorage.getItem(boardCardVariantStorageKey)
-  return validBoardCardVariants.includes(stored) ? stored : 'icons-top-right'
-}
-
-function useBoardCardVariant() {
-  const [variant, setVariantState] = useState(readStoredBoardCardVariant)
-  useEffect(() => {
-    const syncVariant = (event) => {
-      const nextVariant = event.detail ?? readStoredBoardCardVariant()
-      if (validBoardCardVariants.includes(nextVariant)) setVariantState(nextVariant)
-    }
-    window.addEventListener('storage', syncVariant)
-    window.addEventListener('board-card-variant-change', syncVariant)
-    return () => {
-      window.removeEventListener('storage', syncVariant)
-      window.removeEventListener('board-card-variant-change', syncVariant)
-    }
-  }, [])
-  const setVariant = (nextVariant) => {
-    if (!validBoardCardVariants.includes(nextVariant)) return
-    window.localStorage.setItem(boardCardVariantStorageKey, nextVariant)
-    setVariantState(nextVariant)
-    window.dispatchEvent(new CustomEvent('board-card-variant-change', { detail: nextVariant }))
-  }
-  return [variant, setVariant]
 }
 
 function scrollToProductList(listRef) {
@@ -513,6 +462,17 @@ function ListFilterToolbar({ query, setQuery, placeholder, searchLabel, activeFi
   )
 }
 
+function SmartListItem({ product, description, onOpen, actions }) {
+  return (
+    <article className={actions ? 'smart-product-row has-actions' : 'smart-product-row'}>
+      <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
+      <button type="button" onClick={onOpen}><strong>{product.name}</strong><small>{description}</small></button>
+      <span><strong>{product.price}</strong></span>
+      {actions && <div className="smart-row-actions">{actions}</div>}
+    </article>
+  )
+}
+
 function SmartProductList({ onOpenProduct }) {
   const [query, setQuery] = useState('')
   const recommendedProducts = smartPicks.map((pick) => ({ ...products.find((product) => product.id === pick.productId), description: pick.description }))
@@ -522,13 +482,7 @@ function SmartProductList({ onOpenProduct }) {
     <div className="smart-list-area">
       <label className="smart-search"><Search size={18} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en la lista" aria-label="Buscar en la lista inteligente" />{query && <button type="button" onClick={() => setQuery('')} aria-label="Limpiar búsqueda"><X size={16} /></button>}</label>
       <div className="smart-picks" aria-label="Productos recomendados">
-        {visibleProducts.map((product) => (
-          <article className="smart-product-row" key={product.id}>
-            <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
-            <button type="button" onClick={() => onOpenProduct(product)}><strong>{product.name}</strong><small>{product.description}</small></button>
-            <span><strong>{product.price}</strong></span>
-          </article>
-        ))}
+        {visibleProducts.map((product) => <SmartListItem key={product.id} product={product} description={product.description} onOpen={() => onOpenProduct(product)} />)}
       </div>
       {visibleProducts.length === 0 && <p className="smart-empty">No hay recomendaciones que coincidan.</p>}
     </div>
@@ -536,7 +490,6 @@ function SmartProductList({ onOpenProduct }) {
 }
 
 function Board({ onOpenProduct, producerMode = false }) {
-  const [boardCardVariant] = useBoardCardVariant()
   const [query, setQuery] = useState('')
   const [favorites, setFavorites] = useState([1, 2])
   const [activeFilter, setActiveFilter] = useState('Todos')
@@ -609,18 +562,14 @@ function Board({ onOpenProduct, producerMode = false }) {
           </div>
 
           <ListFilterToolbar query={query} setQuery={setQuery} placeholder="Buscar fruta u hortaliza" searchLabel="Buscar un producto" activeFilterCount={activeFilterCount} onClear={() => { setPriceFilter('all'); setVarietyFilter('all'); setPresentationFilter('all'); setCalibreFilter('all'); setCategoryFilter('all'); setNaveFilter('all'); setUnitFilter('all'); setSortBy('name') }}>
-              <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Nombre' }, { value: 'priceAsc', label: 'Menor precio' }, { value: 'priceDesc', label: 'Mayor precio' }]} />
-              <ProductFilterFields priceFilter={priceFilter} setPriceFilter={setPriceFilter} varietyFilter={varietyFilter} setVarietyFilter={setVarietyFilter} presentationFilter={presentationFilter} setPresentationFilter={setPresentationFilter} calibreFilter={calibreFilter} setCalibreFilter={setCalibreFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} naveFilter={naveFilter} setNaveFilter={setNaveFilter} unitFilter={unitFilter} setUnitFilter={setUnitFilter} />
+            <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Nombre' }, { value: 'priceAsc', label: 'Menor precio' }, { value: 'priceDesc', label: 'Mayor precio' }]} />
+            <ProductFilterFields priceFilter={priceFilter} setPriceFilter={setPriceFilter} varietyFilter={varietyFilter} setVarietyFilter={setVarietyFilter} presentationFilter={presentationFilter} setPresentationFilter={setPresentationFilter} calibreFilter={calibreFilter} setCalibreFilter={setCalibreFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} naveFilter={naveFilter} setNaveFilter={setNaveFilter} unitFilter={unitFilter} setUnitFilter={setUnitFilter} />
           </ListFilterToolbar>
         </div>
 
         <div className={isPageChanging ? 'product-grid page-changing' : 'product-grid'} ref={productListRef}>
           {paginatedProducts.map((product) => (
-            <ProductListItem key={product.id} product={product} status={`${product.sellers} ${producerMode ? 'productores' : 'operadores'}`} onOpen={() => onOpenProduct(product, producerMode ? 'producer' : 'operator')} actionLayout={boardCardVariant} showUnit={false} actions={(
-              <button className={favorites.includes(product.id) ? 'favorite selected' : 'favorite'} type="button" onClick={() => toggleFavorite(product.id)} aria-label={favorites.includes(product.id) ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}>
-                <Star size={16} strokeWidth={2} fill={favorites.includes(product.id) ? 'currentColor' : 'none'} aria-hidden="true" />
-              </button>
-            )} />
+            <BoardProductCard key={product.id} product={product} status={`${product.sellers} ${producerMode ? 'productores' : 'operadores'}`} favorite={favorites.includes(product.id)} onToggleFavorite={() => toggleFavorite(product.id)} onOpen={() => onOpenProduct(product, producerMode ? 'producer' : 'operator')} />
           ))}
         </div>
 
@@ -681,67 +630,132 @@ function DrawerShell({ onClose, labelledBy, className = '', onOpenPage, children
 }
 
 function MediaModal({ src, alt, onClose }) {
+  const [isClosing, setIsClosing] = useState(false)
+  const requestClose = () => setIsClosing(true)
   useEffect(() => {
-    const closeOnEscape = (event) => { if (event.key === 'Escape') onClose() }
+    const closeOnEscape = (event) => { if (event.key === 'Escape') requestClose() }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [onClose])
+  }, [])
 
   return (
-    <div className="media-modal" role="dialog" aria-modal="true" aria-label={alt} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <button type="button" onClick={onClose} aria-label="Cerrar imagen"><X size={22} /></button>
+    <div className={isClosing ? 'media-modal closing' : 'media-modal'} role="dialog" aria-modal="true" aria-label={alt} onMouseDown={(event) => event.target === event.currentTarget && requestClose()} onAnimationEnd={(event) => { if (isClosing && event.target === event.currentTarget && event.animationName === 'media-overlay-out') onClose() }}>
+      <button type="button" onClick={requestClose} aria-label="Cerrar imagen"><X size={22} /></button>
       <img src={src} alt={alt} />
     </div>
   )
 }
 
-const offerVariantStorageKey = 'mercado-hoy:provider-card-actions'
-const validOfferVariants = ['stack', 'stack-centered', 'stack-horizontal', 'rail']
-
-function readStoredOfferVariant() {
-  const stored = window.localStorage.getItem(offerVariantStorageKey)
-  return validOfferVariants.includes(stored) ? stored : 'stack-horizontal'
-}
-
-function useOfferVariant() {
-  const [variant, setVariantState] = useState(readStoredOfferVariant)
+function InputModal({ heading, label, value, prefix, confirmLabel = 'Confirmar', onConfirm, onCancel }) {
+  const [inputValue, setInputValue] = useState(String(value ?? ''))
+  const [isClosing, setIsClosing] = useState(false)
+  const pendingAction = useRef(null)
+  const closeWith = (action) => { pendingAction.current = action; setIsClosing(true) }
   useEffect(() => {
-    const syncVariant = (event) => {
-      const nextVariant = event.detail ?? readStoredOfferVariant()
-      if (validOfferVariants.includes(nextVariant)) setVariantState(nextVariant)
-    }
-    window.addEventListener('storage', syncVariant)
-    window.addEventListener('offer-variant-change', syncVariant)
-    return () => {
-      window.removeEventListener('storage', syncVariant)
-      window.removeEventListener('offer-variant-change', syncVariant)
-    }
-  }, [])
-  const setVariant = (nextVariant) => {
-    if (!validOfferVariants.includes(nextVariant)) return
-    window.localStorage.setItem(offerVariantStorageKey, nextVariant)
-    setVariantState(nextVariant)
-    window.dispatchEvent(new CustomEvent('offer-variant-change', { detail: nextVariant }))
-  }
-  return [variant, setVariant]
+    const closeOnEscape = (event) => { if (event.key === 'Escape') closeWith(onCancel) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onCancel])
+
+  return (
+    <div className={isClosing ? 'input-modal-overlay closing' : 'input-modal-overlay'} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeWith(onCancel)}>
+      <form className={isClosing ? 'input-modal closing' : 'input-modal'} role="dialog" aria-modal="true" aria-labelledby="input-modal-heading" onSubmit={(event) => { event.preventDefault(); if (inputValue !== '') closeWith(() => onConfirm(inputValue)) }} onAnimationEnd={(event) => { if (isClosing && event.animationName === 'input-modal-out') pendingAction.current?.() }}>
+        <h2 id="input-modal-heading">{heading}</h2>
+        <label><span>{label}</span><div className="input-modal-control">{prefix && <i>{prefix}</i>}<input type="number" min="0" step="1" value={inputValue} onChange={(event) => setInputValue(event.target.value)} autoFocus required /></div></label>
+        <div className="input-modal-actions"><button type="button" onClick={() => closeWith(onCancel)}>Cancelar</button><button type="submit" disabled={inputValue === ''}>{confirmLabel}</button></div>
+      </form>
+    </div>
+  )
 }
 
-function OperatorOfferCard({ operator, product, actionLayout = 'rail', onOpen = () => {}, onOpenMedia = () => {}, preview = false }) {
+function ConfirmModal({ heading, description, confirmLabel = 'Eliminar', onConfirm, onCancel }) {
+  const [isClosing, setIsClosing] = useState(false)
+  const pendingAction = useRef(null)
+  const closeWith = (action) => { pendingAction.current = action; setIsClosing(true) }
+  useEffect(() => {
+    const closeOnEscape = (event) => { if (event.key === 'Escape') closeWith(onCancel) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onCancel])
+
   return (
-    <article className={`operator-row actions-${actionLayout}`} role="button" tabIndex="0" onClick={onOpen} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen() } }} aria-label={`Abrir mercado de ${operator.name}`}>
-      {operator.offerPhoto ? <button className="operator-offer-photo" type="button" onClick={(event) => { event.stopPropagation(); onOpenMedia({ src: operator.offerPhoto, alt: `Mercadería aportada por ${operator.name}` }) }} aria-label={`Ampliar foto de ${operator.name}`}><img src={operator.offerPhoto} alt="" /></button> : <span className="operator-offer-photo empty" aria-label="Sin imagen">Sin imagen</span>}
-      <div className="operator-identity"><h4>{operator.name}</h4><span>{operator.place}</span></div>
-      <div className="operator-price-list">{operator.priceOptions.map((option) => <span key={option.key}><small>{option.label} · {option.unit}</small><strong><b>{option.price}</b></strong></span>)}</div>
-      <div className={`offer-actions ${actionLayout}`}>
-        <button type="button" onClick={(event) => event.stopPropagation()} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button>
-        <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => { event.stopPropagation(); if (preview) event.preventDefault() }} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a>
+    <div className={isClosing ? 'input-modal-overlay closing' : 'input-modal-overlay'} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeWith(onCancel)}>
+      <section className={isClosing ? 'input-modal confirm-modal closing' : 'input-modal confirm-modal'} role="dialog" aria-modal="true" aria-labelledby="confirm-modal-heading" onAnimationEnd={(event) => { if (isClosing && event.animationName === 'input-modal-out') pendingAction.current?.() }}>
+        <div className="confirm-modal-icon"><Trash2 size={22} /></div>
+        <h2 id="confirm-modal-heading">{heading}</h2>
+        <p>{description}</p>
+        <div className="input-modal-actions"><button type="button" onClick={() => closeWith(onCancel)}>Cancelar</button><button className="danger" type="button" onClick={() => closeWith(onConfirm)}>{confirmLabel}</button></div>
+      </section>
+    </div>
+  )
+}
+
+function MarketListingCard({
+  className = '',
+  image,
+  imageAlt = '',
+  emptyImageLabel = 'Sin imagen',
+  onImageClick,
+  title,
+  subtitle,
+  rows = [],
+  actions,
+  onOpen = () => { },
+  ariaLabel,
+}) {
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onOpen()
+    }
+  }
+
+  return (
+    <article className={`operator-row market-listing-card${actions ? ' has-card-actions' : ''}${className ? ` ${className}` : ''}`} role="button" tabIndex="0" onClick={onOpen} onKeyDown={handleKeyDown} aria-label={ariaLabel}>
+      {image ? (
+        onImageClick ? (
+          <button className="operator-offer-photo" type="button" onClick={(event) => { event.stopPropagation(); onImageClick() }} aria-label={`Ampliar foto de ${title}`}>
+            <img src={image} alt={imageAlt} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
+          </button>
+        ) : (
+          <span className="operator-offer-photo static"><img src={image} alt={imageAlt} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} /></span>
+        )
+      ) : <span className="operator-offer-photo empty" aria-label={emptyImageLabel}>{emptyImageLabel}</span>}
+      <div className="operator-identity"><h4>{title}</h4>{subtitle && <span>{subtitle}</span>}</div>
+      <div className="operator-price-list">
+        {rows.map((row) => <span key={row.key}>{row.label && <small>{row.label}</small>}<strong>{row.onViewImage && <button className="variant-photo-action" type="button" onClick={(event) => { event.stopPropagation(); row.onViewImage() }} aria-label={`Ver foto de ${row.label}`}><ImageIcon size={13} /></button>}<b>{row.price}</b>{row.priceMeta && <small>{row.priceMeta}</small>}</strong></span>)}
       </div>
+      {actions && <div className="offer-actions">{actions}</div>}
     </article>
   )
 }
 
+function OperatorOfferCard({ operator, product, onOpen = () => { }, onOpenMedia = () => { } }) {
+  const actions = (
+    <>
+      <button type="button" onClick={(event) => event.stopPropagation()} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button>
+      <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a>
+    </>
+  )
+
+  return (
+    <MarketListingCard image={operator.offerPhoto} onImageClick={operator.offerPhoto ? () => onOpenMedia({ src: operator.offerPhoto, alt: `Mercadería aportada por ${operator.name}` }) : undefined} title={operator.name} subtitle={operator.place} rows={operator.priceOptions.map((option) => ({ key: option.key, label: `${option.label} · ${option.unit}`, price: option.price, onViewImage: option.photo ? () => onOpenMedia({ src: option.photo, alt: `${option.label} de ${operator.name}` }) : undefined }))} actions={actions} onOpen={onOpen} ariaLabel={`Abrir mercado de ${operator.name}`} />
+  )
+}
+
+function BoardProductCard({ product, status, favorite = false, onToggleFavorite = () => { }, onOpen = () => { }, actions: providedActions }) {
+  const favoriteAction = (
+    <button className={favorite ? 'favorite selected' : 'favorite'} type="button" onClick={(event) => { event.stopPropagation(); onToggleFavorite() }} aria-label={favorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}>
+      <Star size={16} strokeWidth={2} fill={favorite ? 'currentColor' : 'none'} aria-hidden="true" />
+    </button>
+  )
+
+  return (
+    <MarketListingCard className="board-product-card" image={product.image} title={product.name} subtitle={product.detail} rows={[{ key: 'market-summary', label: status, price: product.price || 'Sin precio' }]} actions={providedActions ?? favoriteAction} onOpen={onOpen} ariaLabel={`Abrir ${product.name}`} />
+  )
+}
+
 function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole = 'operator', asPage = false, onBack }) {
-  const [offerVariant] = useOfferVariant()
   const [operatorQuery, setOperatorQuery] = useState('')
   const [operatorSort, setOperatorSort] = useState('price')
   const [selectedNave, setSelectedNave] = useState('Todas')
@@ -760,11 +774,14 @@ function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole 
   const naves = useMemo(() => [...new Set(actors.map((operator) => operator.place.split(' · ')[0]))], [actors])
   const visibleOperators = useMemo(() => {
     const term = operatorQuery.trim().toLocaleLowerCase('es')
-    return actors.map((operator, index) => ({
-      ...operator,
-      offerPhoto: operator.photo !== undefined ? operator.photo : (index % 3 === 0 ? null : product.image),
-      priceOptions: getOperatorPriceOptions(product, operator, index),
-    }))
+    return actors.map((operator, index) => {
+      const offerPhoto = operator.photo !== undefined ? operator.photo : (index % 3 === 0 ? null : product.image)
+      return {
+        ...operator,
+        offerPhoto,
+        priceOptions: getOperatorPriceOptions(product, operator, index).map((option, optionIndex) => ({ ...option, photo: offerPhoto && ((index * 2 + optionIndex) % 3 === 1) ? offerPhoto : null })),
+      }
+    })
       .filter((operator) => !term || operator.name.toLocaleLowerCase('es').includes(term))
       .filter((operator) => selectedNave === 'Todas' || operator.place.startsWith(selectedNave))
       .filter((operator) => selectedVariety === 'all' || operator.priceOptions.some((option) => option.variety === selectedVariety))
@@ -803,7 +820,7 @@ function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole 
     </ListFilterToolbar>
     <div className="operator-list-heading"><h3>{actorPlural}</h3><span>{visibleOperators.length} de {actors.length}</span></div>
     <div className="operator-list" ref={operatorListRef}>
-      {paginatedOperators.map((operator) => <OperatorOfferCard key={`${operator.name}-${operator.place}`} operator={operator} product={product} actionLayout={offerVariant} onOpen={() => onOpenProvider(operator, product, actorRole)} onOpenMedia={setMediaPreview} />)}
+      {paginatedOperators.map((operator) => <OperatorOfferCard key={`${operator.name}-${operator.place}`} operator={operator} product={product} onOpen={() => onOpenProvider(operator, product, actorRole)} onOpenMedia={setMediaPreview} />)}
       {visibleOperators.length === 0 && <p className="operator-empty">No hay {actorPlural.toLocaleLowerCase('es')} que coincidan con la búsqueda.</p>}
     </div>
     <Pagination currentPage={currentPage} pageCount={pageCount} onChange={changePage} label={`Paginación de ${actorPlural.toLocaleLowerCase('es')}`} className="drawer-pagination" />
@@ -840,77 +857,38 @@ function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole 
   </>)
 }
 
-function VariantConcept({ number, title, defaultOpen = false, children }) {
-  const [open, setOpen] = useState(defaultOpen)
-  const contentId = `variant-concept-${number}`
-  return (
-    <section className={open ? 'variant-concept open' : 'variant-concept'}>
-      <button className="variant-concept-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls={contentId}>
-        <span className="variant-concept-heading"><p>Concepto {number}</p><h2>{title}</h2></span>
-        <i><ChevronDown size={22} aria-hidden="true" /></i>
-      </button>
-      <div className="variant-concept-collapse" id={contentId} aria-hidden={!open} inert={!open}><div>{children}</div></div>
-    </section>
-  )
+function getActorPublishedProducts(entry, role) {
+  const directlyPublished = role === 'producer' ? [entry.product] : products.filter((product) => product.operators.some((operator) => operator.name === entry.name))
+  return [...new Map([...directlyPublished, ...products].filter(Boolean).map((product) => [product.id, product])).values()].slice(0, Math.min(6, entry.productCount ?? 6))
 }
 
-function VariantOption({ selected, title, onSelect, children }) {
-  return (
-    <article className={selected ? 'variant-option selected' : 'variant-option'}>
-      <button className="variant-selector" type="button" onClick={onSelect} aria-pressed={selected}>
-        <i>{selected && <Check size={15} />}</i>
-        <span><strong>{title}</strong><small>{selected ? 'Seleccionada' : 'Seleccionar'}</small></span>
-      </button>
-      <div className="variant-preview">{children}</div>
-    </article>
-  )
-}
-
-function VariantsPage() {
-  const [selectedVariant, setSelectedVariant] = useOfferVariant()
-  const [selectedBoardVariant, setSelectedBoardVariant] = useBoardCardVariant()
-  const [mediaPreview, setMediaPreview] = useState(null)
-  const product = products[0]
-  const sourceOperator = product.operators.find((entry) => entry.name === 'Los Aromos') ?? product.operators[0]
-  const operator = { ...sourceOperator, offerPhoto: product.image, priceOptions: getOperatorPriceOptions(product, sourceOperator, 1) }
-  const variants = [
-    { id: 'stack-horizontal', title: 'Stack horizontal de icon buttons', actionLayout: 'stack-horizontal' },
-    { id: 'stack', title: 'Stack de icon buttons', actionLayout: 'stack' },
-    { id: 'stack-centered', title: 'Stack de icon buttons centrados', actionLayout: 'stack-centered' },
-    { id: 'rail', title: 'Separación vertical', actionLayout: 'rail' },
-  ]
-  const boardVariants = [
-    { id: 'icons-top-right', title: 'Icons top right' },
-    { id: 'current', title: 'Actual' },
-  ]
-  const favoriteAction = <button className="favorite selected" type="button" aria-label={`Quitar ${product.name} de favoritos`}><Star size={16} strokeWidth={2} fill="currentColor" aria-hidden="true" /></button>
+function ActorPublishedProductList({ entry, role, items, onOpenProduct, variantOverrides = {}, removedVariantKeys = [], onEditVariant, onRemoveVariant, onAddVariant, onRemoveProduct, onOpenVariantMedia, usePublishedVariantPhotos = false }) {
+  const allActorProducts = getActorPublishedProducts(entry, role)
+  const actorProducts = items ?? allActorProducts
 
   return (
-    <main className="variants-page">
-      <header className="variants-heading"><p>Prototipo</p><h1>Variantes</h1><span>Comparación de componentes.</span></header>
-      <div className="variant-concepts">
-        <VariantConcept number="01" title="Listado de operadores en detalles del producto">
-          <div className="variant-grid">
-            {variants.map((variant) => <VariantOption selected={selectedVariant === variant.id} title={variant.title} onSelect={() => setSelectedVariant(variant.id)} key={variant.id}><OperatorOfferCard operator={operator} product={product} actionLayout={variant.actionLayout} onOpenMedia={setMediaPreview} preview /></VariantOption>)}
-          </div>
-        </VariantConcept>
-        <VariantConcept number="02" title="Tarjetas del listado de pizarrón">
-          <div className="variant-grid board-card-variant-grid">
-            {boardVariants.map((variant) => <VariantOption selected={selectedBoardVariant === variant.id} title={variant.title} onSelect={() => setSelectedBoardVariant(variant.id)} key={variant.id}><ProductListItem product={product} status={`${product.sellers} operadores`} actionLayout={variant.id} showUnit={false} actions={favoriteAction} /></VariantOption>)}
-          </div>
-        </VariantConcept>
-      </div>
-      {mediaPreview && <MediaModal src={mediaPreview.src} alt={mediaPreview.alt} onClose={() => setMediaPreview(null)} />}
-    </main>
+    <div className="actor-product-list">
+      {actorProducts.map((product, index) => {
+        const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
+        const stableProductIndex = allActorProducts.findIndex((entry) => entry.id === product.id)
+        const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, stableProductIndex < 0 ? product.actorProductIndex ?? index : stableProductIndex).filter((option) => !removedVariantKeys.includes(`${product.id}:${option.key}`)).map((option, optionIndex) => ({ ...option, photo: option.photo ?? (usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) }))
+        return <article className="has-price-options" role="button" tabIndex="0" key={product.id} onClick={() => onOpenProduct(product, role)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpenProduct(product, role) } }}>
+          <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
+          <span className="actor-product-copy"><span className="actor-product-heading"><strong>{product.name}</strong>{(onAddVariant || onRemoveProduct) && <span className="actor-product-heading-actions">{onAddVariant && <button type="button" onClick={(event) => { event.stopPropagation(); onAddVariant(product) }} aria-label={`Agregar variedad de ${product.name}`}><Plus size={14} /></button>}{onRemoveProduct && <button className="remove" type="button" onClick={(event) => { event.stopPropagation(); onRemoveProduct(product) }} aria-label={`Eliminar ${product.name}`}><Trash2 size={14} /></button>}</span>}</span><span className="actor-product-price-list">{priceOptions.map((option) => {
+            return <span key={option.key}><small>{option.variety} · Cat. {option.category} · {option.calibre} · {option.unit}</small><span className="actor-variant-price">{option.photo && onOpenVariantMedia && <button className="variant-photo-action" type="button" onClick={(event) => { event.stopPropagation(); onOpenVariantMedia({ src: option.photo, alt: `${option.variety} de ${entry.name}` }) }} aria-label={`Ver foto de ${option.variety}`}><ImageIcon size={13} /></button>}<b>{option.price}</b>{(onEditVariant || onRemoveVariant) && <span className="actor-variant-actions">{onEditVariant && <button type="button" onClick={(event) => { event.stopPropagation(); onEditVariant(product, option) }} aria-label={`Editar variante ${option.variety}`}><Pencil size={14} /></button>}{onRemoveVariant && <button className="remove" type="button" onClick={(event) => { event.stopPropagation(); onRemoveVariant(product, option) }} aria-label={`Eliminar variante ${option.variety}`}><Trash2 size={14} /></button>}</span>}</span></span>
+          })}</span></span>
+        </article>
+      })}
+    </div>
   )
 }
 
 function ActorPanel({ entry, role, onClose, onOpenPage, onOpenProduct }) {
   const roleLabel = role === 'producer' ? 'Productor' : 'Operador'
-  const directlyPublished = role === 'producer' ? [entry.product] : products.filter((product) => product.operators.some((operator) => operator.name === entry.name))
-  const actorProducts = [...new Map([...directlyPublished, ...products].filter(Boolean).map((product) => [product.id, product])).values()].slice(0, Math.min(6, entry.productCount ?? 6))
+  const actorProducts = getActorPublishedProducts(entry, role)
+  const [mediaPreview, setMediaPreview] = useState(null)
 
-  return (
+  return (<>
     <DrawerShell onClose={onClose} labelledBy="actor-panel-title" className="actor-panel" onOpenPage={onOpenPage}>
       {(swipeProps) => <>
         <header className="actor-panel-header" {...swipeProps}>
@@ -923,21 +901,13 @@ function ActorPanel({ entry, role, onClose, onOpenPage, onOpenProduct }) {
           <div className="actor-panel-facts"><span><small>Mercadería publicada</small><strong>{entry.productCount} productos</strong></span><span><small>Horario</small><strong>04:00–13:00</strong></span></div>
           <div className="actor-panel-actions"><button type="button"><MapPin size={15} />Ubicación</button><a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer"><MessageCircle size={15} />WhatsApp</a></div>
           <div className="actor-products-heading"><h3>Productos publicados</h3><span>{entry.productCount ?? actorProducts.length} productos</span></div>
-          <div className="actor-product-list">
-            {actorProducts.map((product, index) => {
-              const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
-              const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, index)
-              return <button className="has-price-options" type="button" key={product.id} onClick={() => onOpenProduct(product, role)}>
-                <img src={product.image} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} />
-                <span className="actor-product-copy"><strong>{product.name}</strong><span className="actor-product-price-list">{priceOptions.map((option) => <span key={option.key}><small>{option.variety} · Cat. {option.category} · {option.calibre} · {option.unit}</small><b>{option.price}</b></span>)}</span></span>
-              </button>
-            })}
-          </div>
+          <ActorPublishedProductList entry={entry} role={role} items={actorProducts} onOpenProduct={onOpenProduct} onOpenVariantMedia={setMediaPreview} />
           <button className="actor-open-page" type="button" onClick={onOpenPage}>Ver página completa <ArrowUpRight size={17} /></button>
         </div>
       </>}
     </DrawerShell>
-  )
+    {mediaPreview && <MediaModal src={mediaPreview.src} alt={mediaPreview.alt} onClose={() => setMediaPreview(null)} />}
+  </>)
 }
 
 const measureUnits = [
@@ -1013,15 +983,18 @@ function getActorProductPriceOptions(product, actor, productIndex = 0) {
   return Array.from({ length: optionCount }, (_, index) => {
     const variety = definition.varieties[(seed + index) % definition.varieties.length]
     const unit = definition.units[(seed + index * 2) % definition.units.length]
+    const presentation = definition.presentations[(seed + index) % definition.presentations.length]
     const calibre = definition.calibres[(seed + index * 3) % definition.calibres.length]
     const category = definition.categories[(seed + index) % definition.categories.length]
     return {
       key: `${product.id}-${variety}-${unit.code}-${category.code}-${calibre.code}-${index}`,
       variety,
       unit: unit.code,
+      presentation,
       category: category.code,
       calibre: calibre.code,
       price: `$${basePrice + index * 4}`,
+      photo: index === 0 ? actor.photo ?? null : null,
     }
   })
 }
@@ -1062,16 +1035,18 @@ function buildPricedProduct({ definition, baseProduct, variety, unit, presentati
   }
 }
 
-function PublicationPanel({ items, onClose, onSave }) {
+function PublicationPanel({ items, initialProduct, initialVariant, onClose, onSave }) {
+  const initialDefinition = initialProduct ? productWebserviceCatalog.find((entry) => entry.id === (initialProduct.sourceProductId ?? initialProduct.id)) : null
+  const initialCombination = initialVariant ?? (initialProduct ? getProductCombination(initialProduct) : null)
   const loadedProductId = useRef(null)
-  const [productId, setProductId] = useState('')
-  const [variety, setVariety] = useState('')
-  const [unit, setUnit] = useState('')
-  const [presentation, setPresentation] = useState('')
-  const [calibre, setCalibre] = useState('')
-  const [category, setCategory] = useState('')
-  const [photo, setPhoto] = useState('')
-  const [price, setPrice] = useState('')
+  const [productId, setProductId] = useState(initialDefinition ? String(initialDefinition.id) : '')
+  const [variety, setVariety] = useState(initialVariant?.variety ?? (initialProduct ? '' : initialCombination?.variety ?? initialDefinition?.varieties[0] ?? ''))
+  const [unit, setUnit] = useState(initialCombination?.unit ?? initialDefinition?.units[0].code ?? '')
+  const [presentation, setPresentation] = useState(initialCombination?.presentation ?? initialDefinition?.presentations[0] ?? '')
+  const [calibre, setCalibre] = useState(initialCombination?.calibre ?? initialDefinition?.calibres[0].code ?? '')
+  const [category, setCategory] = useState(initialCombination?.category ?? initialDefinition?.categories[0].code ?? '')
+  const [photo, setPhoto] = useState(initialVariant?.photo ?? '')
+  const [price, setPrice] = useState(initialVariant?.price?.match(/\d+/)?.[0] ?? '')
 
   const selectedDefinition = productWebserviceCatalog.find((definition) => definition.id === Number(productId))
   const matchedProduct = items.find((item) => {
@@ -1080,11 +1055,11 @@ function PublicationPanel({ items, onClose, onSave }) {
   })
 
   useEffect(() => {
-    if (!matchedProduct || loadedProductId.current === matchedProduct.id) return
+    if (initialVariant || !matchedProduct || loadedProductId.current === matchedProduct.id) return
     loadedProductId.current = matchedProduct.id
     setPrice(matchedProduct.price.match(/\d+/)?.[0] ?? '')
     setPhoto(matchedProduct.image ?? '')
-  }, [matchedProduct])
+  }, [initialVariant, matchedProduct])
 
   const selectProduct = (nextProductId) => {
     const definition = productWebserviceCatalog.find((entry) => entry.id === Number(nextProductId))
@@ -1111,14 +1086,14 @@ function PublicationPanel({ items, onClose, onSave }) {
       {(swipeProps) => <>
         <header className="publication-panel-header" {...swipeProps}>
           <i className="actor-panel-handle" aria-hidden="true" />
-          <p>Nueva publicación</p>
-          <h2 id="publication-panel-title">Agregar producto</h2>
+          <p>{initialVariant ? 'Editar combinación' : initialProduct ? 'Nueva combinación' : 'Nueva publicación'}</p>
+          <h2 id="publication-panel-title">{initialVariant ? `Editar variante de ${initialProduct.name}` : initialProduct ? `Agregar variedad de ${initialProduct.name}` : 'Agregar producto'}</h2>
           <span>Seleccioná las características de la mercadería.</span>
         </header>
         <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); onSave(matchedProduct, draftProduct) }}>
-          <ProductPriceFields productId={productId} onProductChange={selectProduct} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
+          <ProductPriceFields productId={productId} onProductChange={selectProduct} lockProduct={Boolean(initialProduct)} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
           {matchedProduct && <div className="existing-publication"><Check size={18} /><span><strong>Producto ya publicado</strong><small>Cargamos sus datos actuales para que puedas editarlos.</small></span></div>}
-          <button className="primary-submit" type="submit" disabled={!draftProduct}>{matchedProduct ? 'Guardar cambios' : 'Publicar producto'} <ArrowRight size={20} /></button>
+          <button className="primary-submit" type="submit" disabled={!draftProduct}>{initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar producto'} <ArrowRight size={20} /></button>
         </form>
       </>}
     </DrawerShell>
@@ -1351,6 +1326,16 @@ function ResetPasswordPage({ onComplete }) {
   )
 }
 
+function ActorDirectoryListItem({ title, subtitle, meta, description, onOpen, actions, highlightSubtitle = false }) {
+  const content = <span className={highlightSubtitle ? 'directory-name highlight-place' : 'directory-name'}><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}{description && <p>{description}</p>}{meta && <em>{meta}</em>}</span>
+  return (
+    <article className="directory-list-item">
+      {onOpen ? <button className="directory-main" type="button" onClick={onOpen}>{content}</button> : <div className="directory-main">{content}</div>}
+      {actions && <div className="operator-actions directory-actions">{actions}</div>}
+    </article>
+  )
+}
+
 function ActorDirectory({ eyebrow, title, description, entries, onOpen, filterLabel, getFilterValue, showLocationAction = false, showWhatsapp = false, highlightPlace = false }) {
   const [query, setQuery] = useState('')
   const [filterValue, setFilterValue] = useState('all')
@@ -1385,17 +1370,7 @@ function ActorDirectory({ eyebrow, title, description, entries, onOpen, filterLa
       </ListFilterToolbar>
       <div className={isPageChanging ? 'directory-list page-changing' : 'directory-list'} ref={listRef}>
         {paginatedEntries.map((entry) => (
-          <article key={`${entry.name}-${entry.place}-${entry.product?.id ?? entry.productCount}`}>
-            <button className="directory-main" type="button" onClick={() => onOpen(entry)}>
-              <span className={highlightPlace ? 'directory-name highlight-place' : 'directory-name'}><strong>{entry.name}</strong><small>{!highlightPlace && <MapPin size={14} />}{entry.place}</small><em>{entry.productCount} productos</em></span>
-            </button>
-            {(showLocationAction || showWhatsapp) && (
-              <div className="operator-actions directory-actions">
-                {showLocationAction && <button type="button" aria-label={`Ver ubicación de ${entry.name}`}><MapPin size={15} /></button>}
-                {showWhatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer" aria-label={`Contactar a ${entry.name} por WhatsApp`}><MessageCircle size={15} /></a>}
-              </div>
-            )}
-          </article>
+          <ActorDirectoryListItem key={`${entry.name}-${entry.place}-${entry.product?.id ?? entry.productCount}`} title={entry.name} subtitle={entry.place} meta={`${entry.productCount} productos`} highlightSubtitle={highlightPlace} onOpen={() => onOpen(entry)} actions={(showLocationAction || showWhatsapp) ? <>{showLocationAction && <button type="button" aria-label={`Ver ubicación de ${entry.name}`}><MapPin size={15} /></button>}{showWhatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer" aria-label={`Contactar a ${entry.name} por WhatsApp`}><MessageCircle size={15} /></a>}</> : null} />
         ))}
       </div>
       {visibleEntries.length === 0 && <div className="catalog-empty"><h2>No hay resultados</h2></div>}
@@ -1404,7 +1379,7 @@ function ActorDirectory({ eyebrow, title, description, entries, onOpen, filterLa
   )
 }
 
-function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebrow = 'Mercado del operador', backLabel = 'Volver al pizarrón', items = products, editable = false, onEdit, onRemove, onCreate, vacation = null, onOpenSubstitute }) {
+function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebrow = 'Mercado del operador', backLabel = 'Volver al pizarrón', items = products, editable = false, onCreate, onRemove, productRole = 'operator', useActorProducts = false }) {
   const [query, setQuery] = useState('')
   const [priceFilter, setPriceFilter] = useState('all')
   const [varietyFilter, setVarietyFilter] = useState('all')
@@ -1419,14 +1394,18 @@ function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebro
   const [selectedDays, setSelectedDays] = useState(calendarDays.slice(0, 6).map((day) => day.id))
   const [openingTime, setOpeningTime] = useState('04:00')
   const [closingTime, setClosingTime] = useState('13:00')
+  const [editingVariant, setEditingVariant] = useState(null)
+  const [variantOverrides, setVariantOverrides] = useState({})
+  const [removedVariantKeys, setRemovedVariantKeys] = useState([])
+  const [pendingDeletion, setPendingDeletion] = useState(null)
+  const [mediaPreview, setMediaPreview] = useState(null)
   const listRef = useRef(null)
   const { changePage, isPageChanging } = usePageTransition(setCurrentPage, listRef)
-  const publishedProducts = items.map((product, index) => ({
-    ...product,
-    marketPrice: editable ? product.price : product.id !== 4 && product.id === originProduct?.id && operator.price !== '—' ? operator.price : product.price,
-    stockLabel: index === 2 ? 'Pocas unidades' : 'Disponible',
-    filterNave: operator.place.split(' · ')[0],
-  }))
+  const sourceProducts = useActorProducts ? getActorPublishedProducts(operator, productRole) : items
+  const publishedProducts = sourceProducts.map((product, index) => {
+    const marketPrice = editable ? product.price : product.id !== 4 && product.id === originProduct?.id && operator.price !== '—' ? operator.price : product.price
+    return { ...product, price: marketPrice, marketPrice, actorProductIndex: index, stockLabel: index === 2 ? 'Pocas unidades' : 'Disponible', filterNave: operator.place.split(' · ')[0] }
+  })
   const visibleProducts = publishedProducts.filter((product) => (!query.trim() || product.name.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))) && productMatchesFilters(product, { priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter })).sort((a, b) => sortBy === 'priceAsc' ? (Number(a.marketPrice.match(/\d+/)?.[0]) || Number.POSITIVE_INFINITY) - (Number(b.marketPrice.match(/\d+/)?.[0]) || Number.POSITIVE_INFINITY) : sortBy === 'priceDesc' ? (Number(b.marketPrice.match(/\d+/)?.[0]) || -1) - (Number(a.marketPrice.match(/\d+/)?.[0]) || -1) : a.name.localeCompare(b.name, 'es'))
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleProducts.length / pageSize))
@@ -1472,10 +1451,6 @@ function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebro
             {editable && <button className="edit-schedule" type="button" onClick={() => setEditingHours((value) => !value)} aria-label={editingHours ? 'Guardar horario' : 'Editar horario'}>{editingHours ? <Check size={15} /> : <Pencil size={15} />}</button>}
           </div>
         </div>
-        {vacation && <aside className="vacation-notice">
-          <CalendarDays size={22} />
-          <div><small>Operador ausente</small><strong>{formatShortDate(vacation.start)} — {formatShortDate(vacation.end)}</strong><p>{vacation.description}</p>{vacation.substitute && <button type="button" onClick={onOpenSubstitute}>Atiende {vacation.substitute.name} <ArrowUpRight size={16} /></button>}</div>
-        </aside>}
         {!editable && <a className="provider-whatsapp" href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por la mercadería de ${operator.name}`)}`} target="_blank" rel="noreferrer"><MessageCircle size={18} />Contactar por WhatsApp</a>}
       </section>
 
@@ -1485,14 +1460,15 @@ function ProviderMarket({ operator, originProduct, onBack, onOpenProduct, eyebro
           <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Nombre' }, { value: 'priceAsc', label: 'Menor precio' }, { value: 'priceDesc', label: 'Mayor precio' }]} />
           <ProductFilterFields priceFilter={priceFilter} setPriceFilter={setPriceFilter} varietyFilter={varietyFilter} setVarietyFilter={setVarietyFilter} presentationFilter={presentationFilter} setPresentationFilter={setPresentationFilter} calibreFilter={calibreFilter} setCalibreFilter={setCalibreFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} naveFilter={naveFilter} setNaveFilter={setNaveFilter} unitFilter={unitFilter} setUnitFilter={setUnitFilter} />
         </ListFilterToolbar>
-        <div className={isPageChanging ? 'provider-product-list page-changing' : 'provider-product-list'} ref={listRef}>
-          {paginatedProducts.map((product) => (
-            <ProductListItem key={product.id} product={product} price={product.marketPrice} status={product.stockLabel} onOpen={() => onOpenProduct(product)} actions={editable ? (<><button className="catalog-edit" type="button" onClick={() => onEdit?.(product)} aria-label={`Editar precio de ${product.name}`}><Pencil size={15} /></button><button className="catalog-remove" type="button" onClick={() => onRemove?.(product.id)} aria-label={`Eliminar ${product.name}`}><Trash2 size={15} /></button></>) : null} />
-          ))}
+        <div className={isPageChanging ? 'published-products-region page-changing' : 'published-products-region'} ref={listRef}>
+          <ActorPublishedProductList entry={operator} role={productRole} items={paginatedProducts} onOpenProduct={onOpenProduct} variantOverrides={variantOverrides} removedVariantKeys={removedVariantKeys} onEditVariant={editable ? (product, option) => setEditingVariant({ product, option }) : null} onRemoveVariant={editable ? (product, option) => setPendingDeletion({ kind: 'variant', product, option }) : null} onAddVariant={editable ? onCreate : null} onRemoveProduct={editable ? (product) => setPendingDeletion({ kind: 'product', product }) : null} onOpenVariantMedia={setMediaPreview} usePublishedVariantPhotos={editable} />
         </div>
         {visibleProducts.length === 0 && <div className="catalog-empty"><h2>No hay productos que coincidan</h2></div>}
         <Pagination currentPage={currentPage} pageCount={pageCount} onChange={changePage} label="Paginación de productos" />
       </section>
+      {editingVariant && <PublicationPanel items={items} initialProduct={editingVariant.product} initialVariant={editingVariant.option} onClose={() => setEditingVariant(null)} onSave={(_, draftProduct) => { if (draftProduct) { const overrideKey = `${editingVariant.product.id}:${editingVariant.option.key}`; setVariantOverrides((current) => ({ ...current, [overrideKey]: { ...draftProduct.combination, price: draftProduct.price, photo: editingVariant.option.photo || draftProduct.image !== editingVariant.product.image ? draftProduct.image : null } })) } setEditingVariant(null) }} />}
+      {pendingDeletion && <ConfirmModal heading={pendingDeletion.kind === 'product' ? `Eliminar ${pendingDeletion.product.name}` : 'Eliminar variante'} description={pendingDeletion.kind === 'product' ? 'Se eliminará el producto junto con todas sus variantes publicadas en tu mercado.' : `${pendingDeletion.option.variety} · Cat. ${pendingDeletion.option.category} · ${pendingDeletion.option.calibre} · ${pendingDeletion.option.unit} dejará de estar publicada.`} confirmLabel={pendingDeletion.kind === 'product' ? 'Eliminar producto' : 'Eliminar variante'} onCancel={() => setPendingDeletion(null)} onConfirm={() => { if (pendingDeletion.kind === 'product') onRemove?.(pendingDeletion.product.id); else setRemovedVariantKeys((current) => [...current, `${pendingDeletion.product.id}:${pendingDeletion.option.key}`]); setPendingDeletion(null) }} />}
+      {mediaPreview && <MediaModal src={mediaPreview.src} alt={mediaPreview.alt} onClose={() => setMediaPreview(null)} />}
     </main>
   )
 }
@@ -1521,13 +1497,25 @@ function EditPrice({ product, onSave, onCancel }) {
         <div className="form-title"><div><h2>Editar precio</h2><p>La actualización se refleja en el catálogo de hoy.</p></div></div>
         <form onSubmit={(event) => { event.preventDefault(); if (updatedProduct) onSave(updatedProduct) }}>
           <div className="edit-product-summary"><img src={product.image} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} /><div><strong>{product.name}</strong><span>{product.detail}</span></div></div>
-          <ProductPriceFields productId={String(definition.id)} onProductChange={() => {}} lockProduct variety={variety} setVariety={setVariety} unit={unit} setUnit={setUnit} presentation={presentation} setPresentation={setPresentation} calibre={calibre} setCalibre={setCalibre} category={category} setCategory={setCategory} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
+          <ProductPriceFields productId={String(definition.id)} onProductChange={() => { }} lockProduct variety={variety} setVariety={setVariety} unit={unit} setUnit={setUnit} presentation={presentation} setPresentation={setPresentation} calibre={calibre} setCalibre={setCalibre} category={category} setCategory={setCategory} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
           <div className="availability-control"><div><b>Publicado hoy</b><span>Define si el producto aparece en tu catálogo.</span></div><button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button></div>
           <button className="primary-submit" type="submit" disabled={!updatedProduct}>Guardar precio <Check size={20} /></button>
           <button className="text-action" type="button" onClick={onCancel}>Cancelar</button>
         </form>
       </section>
     </main>
+  )
+}
+
+function SimpleFormLayout({ heading, description, onSubmit, fields, actions }) {
+  return (
+    <section className="form-content simple-form-layout">
+      <div className="form-title"><div><h2>{heading}</h2>{description && <p>{description}</p>}</div></div>
+      <form onSubmit={onSubmit}>
+        <div className="simple-form-fields">{fields}</div>
+        <div className="simple-form-actions">{actions}</div>
+      </form>
+    </section>
   )
 }
 
@@ -1544,17 +1532,29 @@ function VacationPage({ value, onSave }) {
         <h1>Modo<br /><em>vacaciones.</em></h1>
         <p>Informá las fechas y quién atenderá tus pedidos durante la ausencia.</p>
       </aside>
-      <section className="form-content">
-        <div className="form-title"><div><h2>Programar vacaciones</h2><p>Esta información se mostrará públicamente en tu mercado.</p></div></div>
-        <form onSubmit={(event) => { event.preventDefault(); onSave({ start, end, description, substitute: vacationReplacementOptions.find((entry) => actorOptionKey(entry) === substituteKey) ?? null }) }}>
-          <div className="field-grid">
-            <label className="field"><span>Fecha de inicio</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} required /></label>
-            <label className="field"><span>Fecha de fin</span><input type="date" value={end} min={start} onChange={(event) => setEnd(event.target.value)} required /></label>
-            <label className="field wide"><span>Descripción</span><textarea rows="5" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Información para tus clientes" required /></label>
-            <label className="field wide"><span>Operador de reemplazo (opcional)</span><select value={substituteKey} onChange={(event) => setSubstituteKey(event.target.value)}><option value="">Sin reemplazo</option>{vacationReplacementOptions.map((entry) => <option value={actorOptionKey(entry)} key={actorOptionKey(entry)}>{entry.name} · {entry.place}</option>)}</select></label>
-          </div>
-          <button className="primary-submit" type="submit">Iniciar licencia <CalendarDays size={20} /></button>
-        </form>
+      <SimpleFormLayout heading="Programar vacaciones" description="Esta información se mostrará públicamente en tu mercado." onSubmit={(event) => { event.preventDefault(); onSave({ start, end, description, substitute: vacationReplacementOptions.find((entry) => actorOptionKey(entry) === substituteKey) ?? null }) }} fields={(
+        <div className="field-grid">
+          <label className="field"><span>Fecha de inicio</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} required /></label>
+          <label className="field"><span>Fecha de fin</span><input type="date" value={end} min={start} onChange={(event) => setEnd(event.target.value)} required /></label>
+          <label className="field wide"><span>Descripción</span><textarea rows="5" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Información para tus clientes" required /></label>
+          <label className="field wide"><span>Operador de reemplazo (opcional)</span><select value={substituteKey} onChange={(event) => setSubstituteKey(event.target.value)}><option value="">Sin reemplazo</option>{vacationReplacementOptions.map((entry) => <option value={actorOptionKey(entry)} key={actorOptionKey(entry)}>{entry.name} · {entry.place}</option>)}</select></label>
+        </div>
+      )} actions={<button className="primary-submit" type="submit">Iniciar licencia <CalendarDays size={20} /></button>} />
+    </main>
+  )
+}
+
+function AbsentOperatorPage({ operator, vacation, onBack, onOpenSubstitute }) {
+  return (
+    <main className="directory-page absent-operator-page">
+      <header className="directory-heading">
+        <div className="directory-heading-copy"><p>Proveedor ausente</p><h1>{operator.name}</h1><span>Información vigente durante la licencia del operador.</span></div>
+      </header>
+      <section className="absence-details" aria-label="Datos de la ausencia">
+        <button className="back-action" type="button" onClick={onBack}><ArrowLeft size={18} />Volver a operadores</button>
+        <div className="absence-date"><CalendarDays size={22} /><span><small>Período de ausencia</small><strong>{formatShortDate(vacation.start)} — {formatShortDate(vacation.end)}</strong></span></div>
+        <div className="absence-description"><small>Descripción</small><p>{vacation.description}</p></div>
+        <div className="absence-substitute"><small>Puesto alternativo</small>{vacation.substitute ? <button type="button" onClick={onOpenSubstitute}><span><strong>{vacation.substitute.name}</strong><em>{vacation.substitute.place}</em></span><ArrowUpRight size={18} /></button> : <p>No se asignó un operador alternativo.</p>}</div>
       </section>
     </main>
   )
@@ -1594,13 +1594,8 @@ function AdminManagementPage({ kind, items, onCreate, onEdit, onDelete }) {
         <label><span>Estado</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="active">Activos</option><option value="inactive">Inactivos</option></select></label>
         {kind === 'operator' && <label><span>Nave</span><select value={nave} onChange={(event) => setNave(event.target.value)}><option value="all">Todas</option>{naveOptions.map((value) => <option key={value}>{value}</option>)}</select></label>}
       </ListFilterToolbar>
-      <div className={isPageChanging ? 'admin-list page-changing' : 'admin-list'} ref={listRef}>
-        {paginatedItems.map((item) => <article key={item.id ?? `${item.name}-${item.place}`}>
-          <button className="admin-list-main" type="button" onClick={() => onEdit(item)}>
-            <span><strong>{item.name}</strong><small>{kind === 'operator' ? `${item.nave} · Puesto ${item.puesto}` : item.place}</small><em>{item.active === false ? 'Inactivo' : 'Activo'}</em></span>
-          </button>
-          <div className="admin-row-actions"><button type="button" onClick={() => onEdit(item)} aria-label={`Editar ${item.name}`}><Pencil size={15} /></button><button type="button" onClick={() => onDelete(item)} aria-label={`Eliminar ${item.name}`}><Trash2 size={15} /></button></div>
-        </article>)}
+      <div className={isPageChanging ? 'directory-list admin-directory-list page-changing' : 'directory-list admin-directory-list'} ref={listRef}>
+        {paginatedItems.map((item) => <ActorDirectoryListItem key={item.id ?? `${item.name}-${item.place}`} title={item.name} subtitle={kind === 'operator' ? `${item.nave} · Puesto ${item.puesto}` : item.place} meta={item.active === false ? 'Inactivo' : 'Activo'} onOpen={() => onEdit(item)} actions={<><button type="button" onClick={() => onEdit(item)} aria-label={`Editar ${item.name}`}><Pencil size={15} /></button><button type="button" onClick={() => onDelete(item)} aria-label={`Eliminar ${item.name}`}><Trash2 size={15} /></button></>} />)}
       </div>
       <Pagination currentPage={currentPage} pageCount={pageCount} onChange={changePage} label={`Paginación de ${labels.title.toLocaleLowerCase('es')}`} />
     </main>
@@ -1673,7 +1668,7 @@ function AdminSmartListPage({ items, onEdit, onDelete, onCreate }) {
         <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Producto' }, { value: 'recent', label: 'Más reciente' }]} />
         <label><span>Período</span><select defaultValue="current"><option value="current">Período actual</option></select></label>
       </ListFilterToolbar>
-      <div className="admin-list smart-admin-list">{visibleItems.map((item) => <article key={item.id}><button className="admin-list-main" type="button" onClick={() => onEdit(item)}><img src={item.product.image} alt="" /><span><strong>{item.product.name}</strong><small>{item.description}</small><em>Recomendado</em></span></button><div className="admin-row-actions"><button type="button" onClick={() => onEdit(item)} aria-label={`Editar ${item.product.name}`}><Pencil size={15} /></button><button type="button" onClick={() => onDelete(item)} aria-label={`Eliminar ${item.product.name}`}><Trash2 size={15} /></button></div></article>)}</div>
+      <div className="product-grid admin-board-list">{visibleItems.map((item) => <BoardProductCard key={item.id} product={{ ...item.product, detail: item.description }} status="" onOpen={() => onEdit(item)} actions={<><button type="button" onClick={(event) => { event.stopPropagation(); onEdit(item) }} aria-label={`Editar ${item.product.name}`}><Pencil size={15} /></button><button type="button" onClick={(event) => { event.stopPropagation(); onDelete(item) }} aria-label={`Eliminar ${item.product.name}`}><Trash2 size={15} /></button></>} />)}</div>
     </main>
   )
 }
@@ -1721,7 +1716,7 @@ function RecoveryRequestsPage({ items, onResolve }) {
         <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'recent', label: 'Más reciente' }, { value: 'name', label: 'Nombre' }]} />
         <label><span>Estado</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option>Todas</option><option>Pendiente</option><option>Resuelta</option></select></label>
       </ListFilterToolbar>
-      <div className={isPageChanging ? 'recovery-request-list page-changing' : 'recovery-request-list'} ref={listRef}>{paginated.map((item) => <article key={item.id}><div><strong>{item.name}</strong><a href={`mailto:${item.email}`}>{item.email}</a><p>{item.problem}</p></div><span className={item.status === 'Pendiente' ? 'pending' : ''}>{item.status}</span>{item.status === 'Pendiente' && <button type="button" onClick={() => onResolve(item.id)}>Marcar resuelta <Check size={15} /></button>}</article>)}</div>
+      <div className={isPageChanging ? 'directory-list admin-directory-list page-changing' : 'directory-list admin-directory-list'} ref={listRef}>{paginated.map((item) => <ActorDirectoryListItem key={item.id} title={item.name} subtitle={item.email || 'Sin email informado'} description={item.problem} meta={item.status} actions={item.status === 'Pendiente' ? <button type="button" onClick={() => onResolve(item.id)} aria-label={`Marcar resuelta la solicitud de ${item.name}`}><Check size={15} /></button> : null} />)}</div>
       <Pagination currentPage={currentPage} pageCount={pageCount} onChange={changePage} label="Paginación de solicitudes" />
     </main>
   )
@@ -1823,7 +1818,7 @@ function App() {
   }
 
   const catalogItems = [...products.filter((product) => catalogProductIds.includes(product.id)), ...customCatalogItems].map((product) => ({ ...product, ...(catalogOverrides[product.id] ?? {}) }))
-  const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} backLabel="Volver al pizarrón" onBack={() => navigate(role === 'producer' ? 'producerBoard' : 'board')} items={catalogItems} editable onCreate={() => setPublicationDrawer({ role, returnView })} onEdit={(product) => { setEditingProduct(product); setEditReturnView(returnView); setView('editPrice'); window.history.pushState({ view: 'editPrice' }, '', `/${role === 'producer' ? 'productor' : 'operador'}/mercado/${product.id}/editar`); window.scrollTo({ top: 0, behavior: 'auto' }) }} onRemove={(productId) => setCatalogProductIds((current) => current.filter((id) => id !== productId))} onOpenProduct={(product) => openProductDrawer(product, role)} />
+  const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} backLabel="Volver al pizarrón" onBack={() => navigate(role === 'producer' ? 'producerBoard' : 'board')} items={catalogItems} editable productRole={role} onCreate={(product) => setPublicationDrawer({ role, returnView, product })} onRemove={(productId) => { setCatalogProductIds((current) => current.filter((id) => id !== productId)); setCustomCatalogItems((current) => current.filter((product) => product.id !== productId)) }} onOpenProduct={(product) => openProductDrawer(product, role)} />
   const saveAdminItem = (kind, item) => {
     const update = (current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
     if (kind === 'operator') setAdminOperators(update)
@@ -1850,22 +1845,21 @@ function App() {
       {view === 'operators' && <ActorDirectory eyebrow="Mercado de hoy" title="Operadores" description="Puestos de la UAM con mercadería y precios publicados." entries={operatorDirectory} filterLabel="Nave" getFilterValue={(entry) => entry.place.split(' · ')[0]} showLocationAction showWhatsapp highlightPlace onOpen={(entry) => openActorFromProduct(entry, entry.product, 'operator')} />}
       {view === 'producers' && <ActorDirectory eyebrow="Oferta de origen" title="Productores" description="Producción disponible para los operadores de la UAM." entries={producerDirectory} filterLabel="Departamento" getFilterValue={(entry) => entry.place.split(' · ')[0]} showWhatsapp onOpen={(entry) => openActorFromProduct(entry, entry.product, 'producer')} />}
       {view === 'productDetail' && <ProductPanel asPage product={productPage?.product ?? products[0]} actorRole={productPage?.role ?? 'operator'} onBack={() => navigate(productPage?.backView ?? (productPage?.role === 'producer' ? 'producerBoard' : 'board'))} onOpenProvider={openActorFromProduct} />}
-      {view === 'provider' && (providerMarket ? <ProviderMarket operator={providerMarket.operator} originProduct={providerMarket.product} eyebrow="Mercado del operador" onBack={() => navigate(providerBackView)} onOpenProduct={(product) => openProductDrawer(product, 'operator')} /> : renderCatalog('provider', 'operator'))}
-      {view === 'producerDetail' && <ProviderMarket operator={providerMarket?.operator ?? producerDirectory[0]} originProduct={providerMarket?.product ?? producerDirectory[0].product} eyebrow="Detalle del productor" backLabel="Volver a productores" onBack={() => navigate(providerBackView === 'producers' ? 'producers' : 'producerBoard')} onOpenProduct={(product) => openProductDrawer(product, 'producer')} />}
+      {view === 'provider' && (providerMarket ? <ProviderMarket operator={providerMarket.operator} originProduct={providerMarket.product} eyebrow="Mercado del operador" onBack={() => navigate(providerBackView)} onOpenProduct={(product) => openProductDrawer(product, 'operator')} productRole="operator" useActorProducts /> : renderCatalog('provider', 'operator'))}
+      {view === 'producerDetail' && <ProviderMarket operator={providerMarket?.operator ?? producerDirectory[0]} originProduct={providerMarket?.product ?? producerDirectory[0].product} eyebrow="Detalle del productor" backLabel="Volver a productores" onBack={() => navigate(providerBackView === 'producers' ? 'producers' : 'producerBoard')} onOpenProduct={(product) => openProductDrawer(product, 'producer')} productRole="producer" useActorProducts />}
       {view === 'producerMarket' && renderCatalog('producerMarket', 'producer')}
       {view === 'vacations' && <VacationPage value={vacation} onSave={(nextVacation) => { setVacation(nextVacation); navigate('absentProvider') }} />}
-      {view === 'absentProvider' && <ProviderMarket operator={operatorDirectory[0]} originProduct={operatorDirectory[0].product} eyebrow="Operador ausente" backLabel="Volver a operadores" onBack={() => navigate('operators')} onOpenProduct={(product) => openProductDrawer(product, 'operator')} vacation={vacation} onOpenSubstitute={() => openDirectoryMarket(vacation.substitute, 'provider', 'absentProvider')} />}
+      {view === 'absentProvider' && <AbsentOperatorPage operator={operatorDirectory[0]} vacation={vacation} onBack={() => navigate('operators')} onOpenSubstitute={() => vacation.substitute && openDirectoryMarket(vacation.substitute, 'provider', 'absentProvider')} />}
       {view === 'adminOperators' && <AdminManagementPage kind="operator" items={adminOperators} onCreate={() => setAdminEditor({ kind: 'operator', item: null })} onEdit={(item) => setAdminEditor({ kind: 'operator', item })} onDelete={(item) => setDeleteTarget({ kind: 'operator', item })} />}
       {view === 'adminProducers' && <AdminManagementPage kind="producer" items={adminProducers} onCreate={() => setAdminEditor({ kind: 'producer', item: null })} onEdit={(item) => setAdminEditor({ kind: 'producer', item })} onDelete={(item) => setDeleteTarget({ kind: 'producer', item })} />}
       {view === 'adminSmartList' && <AdminSmartListPage items={adminSmartItems} onCreate={() => setSmartEditor({ item: null })} onEdit={(item) => setSmartEditor({ item })} onDelete={(item) => setAdminSmartItems((current) => current.filter((entry) => entry.id !== item.id))} />}
       {view === 'adminRecovery' && <RecoveryRequestsPage items={recoveryRequests} onResolve={(id) => setRecoveryRequests((current) => current.map((item) => item.id === id ? { ...item, status: 'Resuelta' } : item))} />}
       {view === 'adminRevaluation' && <PriceRevaluationPage />}
-      {view === 'variants' && <VariantsPage />}
       {view === 'editPrice' && <EditPrice product={editingProduct ?? { ...products[0], ...(catalogOverrides[products[0].id] ?? {}) }} onSave={(nextProduct) => { setCatalogOverrides((current) => ({ ...current, [nextProduct.id]: nextProduct })); navigate(editReturnView) }} onCancel={() => navigate(editReturnView)} />}
       {entityDrawerStack.map((drawer) => drawer.type === 'product'
         ? <ProductPanel key={drawer.drawerId} product={drawer.product} actorRole={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenProvider={openActorFromProduct} onOpenPage={(product, role) => { setProductPage({ product, role, backView: view }); setEntityDrawerStack([]); setView('productDetail'); window.history.pushState({ view: 'productDetail' }, '', `${role === 'producer' ? '/operador' : ''}/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`); window.scrollTo({ top: 0, behavior: 'auto' }) }} />
         : <ActorPanel key={drawer.drawerId} entry={drawer.entry} role={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenPage={() => openDirectoryMarket(drawer.entry, drawer.role === 'producer' ? 'producerDetail' : 'provider', drawer.backView)} onOpenProduct={(product, role) => openProductDrawer(product, role)} />)}
-      {publicationDrawer && <PublicationPanel items={catalogItems} onClose={() => setPublicationDrawer(null)} onSave={(matchedProduct, draftProduct) => { if (matchedProduct && draftProduct) { setCatalogProductIds((current) => current.includes(matchedProduct.id) ? current : [...current, matchedProduct.id]); setCatalogOverrides((current) => ({ ...current, [matchedProduct.id]: draftProduct })) } else if (draftProduct) setCustomCatalogItems((current) => [...current, draftProduct]); setPublicationDrawer(null) }} />}
+      {publicationDrawer && <PublicationPanel items={catalogItems} initialProduct={publicationDrawer.product} onClose={() => setPublicationDrawer(null)} onSave={(matchedProduct, draftProduct) => { if (matchedProduct && draftProduct) { setCatalogProductIds((current) => current.includes(matchedProduct.id) ? current : [...current, matchedProduct.id]); setCatalogOverrides((current) => ({ ...current, [matchedProduct.id]: draftProduct })) } else if (draftProduct) setCustomCatalogItems((current) => [...current, draftProduct]); setPublicationDrawer(null) }} />}
       {adminEditor && <AdminEditorPanel kind={adminEditor.kind} item={adminEditor.item} onClose={() => setAdminEditor(null)} onSave={(item) => saveAdminItem(adminEditor.kind, item)} />}
       {deleteTarget && <DeleteConfirmationPanel item={deleteTarget.item} onClose={() => setDeleteTarget(null)} onConfirm={confirmAdminDelete} />}
       {smartEditor && <SmartRecommendationPanel item={smartEditor.item} availableProducts={externalProducts} onClose={() => setSmartEditor(null)} onSave={(item) => { setAdminSmartItems((current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]); setSmartEditor(null) }} />}
