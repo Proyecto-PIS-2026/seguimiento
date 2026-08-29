@@ -83,8 +83,9 @@ export default function Publish({ onDone }: PublishProps) {
           </label>
 
           <div className="field-grid">
-            <label className="field wide"><span>Producto</span><select defaultValue="Manzana"><option>Manzana</option><option>Tomate</option><option>Palta</option><option>Banana</option></select></label>
+            <label className="field wide"><span>Especie</span><select defaultValue="Manzana"><option>Manzana</option><option>Tomate</option><option>Palta</option><option>Banana</option></select></label>
             <label className="field"><span>Variedad</span><select defaultValue="Fuji"><option>Fuji</option><option>Granny Smith</option><option>Red Delicious</option></select></label>
+            <label className="field"><span>Presentación</span><select defaultValue="Granel"><option>Granel</option><option>Cajón</option><option>Bandeja</option><option>Atado</option></select></label>
             <label className="field"><span>Unidad</span><select defaultValue="Kilogramo"><option>Kilogramo</option><option>Docena</option><option>Unidad</option></select></label>
             <label className="field"><span>Calibre</span><select defaultValue="Grande"><option>Grande</option><option>Mediano</option><option>Chico</option></select></label>
             <label className="field"><span>Categoría</span><select defaultValue="I"><option>E</option><option>I</option><option>II</option></select></label>

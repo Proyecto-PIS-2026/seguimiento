@@ -257,7 +257,7 @@ export function usePageTransition(setCurrentPage, listRef) {
   return { changePage, isPageChanging }
 }
 
-export function productMatchesFilters(product, { priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter }) {
+export function productMatchesFilters(product, { groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter }) {
   const numericPrice = product.price.match(/\d+/)?.[0]
   const price = numericPrice ? Number(numericPrice) : null
   const definition = productWebserviceCatalog.find((entry) => entry.id === (product.sourceProductId ?? product.id))
@@ -265,6 +265,8 @@ export function productMatchesFilters(product, { priceFilter, varietyFilter, pre
   const nave = product.filterNave ?? product.operators[0]?.place.split(' · ')[0] ?? ''
   const matchesPrice = priceFilter === 'all' || (priceFilter === 'noPrice' && price === null) || (price !== null && ((priceFilter === 'under50' && price < 50) || (priceFilter === '50to100' && price >= 50 && price <= 100) || (priceFilter === 'over100' && price > 100)))
   return matchesPrice
+    && (groupFilter === 'all' || definition?.group === groupFilter)
+    && (speciesFilter === 'all' || definition?.species === speciesFilter)
     && (varietyFilter === 'all' || combination?.variety === varietyFilter)
     && (presentationFilter === 'all' || combination?.presentation === presentationFilter)
     && (calibreFilter === 'all' || combination?.calibre === calibreFilter)

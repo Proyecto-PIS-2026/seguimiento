@@ -41,7 +41,7 @@ export default function AdminHeader({ eyebrow, title, description, count, onCrea
   return (
     <header className="admin-header">
       <div><p>{eyebrow}</p><h1>{title}</h1><span>{description}</span></div>
-      {(count !== undefined || onCreate) && <div className="admin-header-actions">{count !== undefined && <small>{count} registros</small>}{onCreate && <button type="button" onClick={onCreate} aria-label={`Agregar ${title.toLocaleLowerCase('es')}`}><Plus size={20} /></button>}</div>}
+      {(count !== undefined || onCreate) && <div className="admin-header-actions">{count !== undefined && <small>{count} registros</small>}{onCreate && <button type="button" onClick={onCreate} aria-label={`Agregar ${title.toLocaleLowerCase('es')}`}><Plus size={20} /><span>Agregar</span></button>}</div>}
     </header>
   )
 }

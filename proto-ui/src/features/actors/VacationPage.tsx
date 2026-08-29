@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { actorOptionKey, vacationReplacementOptions } from '../../shared'
 import SimpleFormLayout from '../../shared/layout/SimpleFormLayout'
+import Select from 'react-select'
 
 type VacationPageProps = {
   value?: any
@@ -41,6 +42,12 @@ export default function VacationPage({ value, onSave }: VacationPageProps) {
   const [end, setEnd] = useState<any>(value.end)
   const [description, setDescription] = useState<any>(value.description)
   const [substituteKey, setSubstituteKey] = useState<any>(value.substitute ? actorOptionKey(value.substitute) : '')
+  const replacementOptions = useMemo(() => [
+    { value: '', label: 'Sin reemplazo' },
+    ...[...vacationReplacementOptions]
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+      .map((entry) => ({ value: actorOptionKey(entry), label: `${entry.name} · ${entry.place}` })),
+  ], [])
 
   return (
     <main className="form-page vacation-page">
@@ -54,7 +61,7 @@ export default function VacationPage({ value, onSave }: VacationPageProps) {
           <label className="field"><span>Fecha de inicio</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} required /></label>
           <label className="field"><span>Fecha de fin</span><input type="date" value={end} min={start} onChange={(event) => setEnd(event.target.value)} required /></label>
           <label className="field wide"><span>Descripción</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Información para tus clientes" required /></label>
-          <label className="field wide"><span>Operador de reemplazo (opcional)</span><select value={substituteKey} onChange={(event) => setSubstituteKey(event.target.value)}><option value="">Sin reemplazo</option>{vacationReplacementOptions.map((entry) => <option value={actorOptionKey(entry)} key={actorOptionKey(entry)}>{entry.name} · {entry.place}</option>)}</select></label>
+          <label className="field wide"><span>Operador de reemplazo (opcional)</span><Select className="vacation-replacement-select" classNamePrefix="replacement-select" inputId="vacation-replacement" value={replacementOptions.find((option) => option.value === substituteKey)} options={replacementOptions} onChange={(option) => setSubstituteKey(option?.value ?? '')} isSearchable placeholder="Buscar operador" noOptionsMessage={() => 'No hay operadores que coincidan'} /></label>
         </div>
       )} actions={<button className="primary-submit" type="submit">Iniciar licencia <CalendarDays size={20} /></button>} />
     </main>

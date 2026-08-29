@@ -53,7 +53,6 @@ export default function ListFilterToolbar({ query, setQuery, placeholder, search
         </label>
         <button className={filtersOpen ? 'filter-button open' : 'filter-button'} type="button" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen} aria-label={filtersOpen ? 'Cerrar filtros' : 'Abrir filtros'}>
           <SlidersHorizontal size={19} strokeWidth={2.1} aria-hidden="true" />
-          <span>Filtros</span>
           {activeFilterCount > 0 && <b>{activeFilterCount}</b>}
         </button>
       </div>

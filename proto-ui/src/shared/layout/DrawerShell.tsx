@@ -37,10 +37,33 @@ type DrawerShellProps = {
   children?: any
 }
 
+let openDrawerCount = 0
+let previousBodyOverflow = ''
+let previousDocumentOverflow = ''
+
 export default function DrawerShell({ onClose, labelledBy, className = '', onOpenPage, children }: DrawerShellProps) {
   const swipeStartY = useRef(null)
   const [isClosing, setIsClosing] = useState<any>(false)
   const [isExpanded, setIsExpanded] = useState<any>(false)
+
+  useEffect(() => {
+    if (openDrawerCount === 0) {
+      previousBodyOverflow = document.body.style.overflow
+      previousDocumentOverflow = document.documentElement.style.overflow
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+    }
+    openDrawerCount += 1
+
+    return () => {
+      openDrawerCount = Math.max(0, openDrawerCount - 1)
+      if (openDrawerCount === 0) {
+        document.body.style.overflow = previousBodyOverflow
+        document.documentElement.style.overflow = previousDocumentOverflow
+      }
+    }
+  }, [])
+
   const requestClose = () => setIsClosing(true)
   const startSwipe = (event) => { swipeStartY.current = event.touches[0]?.clientY ?? null }
   const moveSwipe = (event) => {

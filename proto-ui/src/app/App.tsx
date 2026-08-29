@@ -52,6 +52,7 @@ import AdminSmartListPage from '../features/admin/AdminSmartListPage'
 import SmartRecommendationPanel from '../features/admin/SmartRecommendationPanel'
 import RecoveryRequestsPage from '../features/admin/RecoveryRequestsPage'
 import PriceRevaluationPage from '../features/admin/PriceRevaluationPage'
+import AdminWorkspace from '../features/admin/AdminWorkspace'
 
 export default function App() {
   const initialRoute = useMemo(() => resolveRoute(window.location.pathname), [])
@@ -68,7 +69,7 @@ export default function App() {
   const [editingProduct, setEditingProduct] = useState<any>(initialRoute.editingProduct ?? null)
   const [editReturnView, setEditReturnView] = useState<any>(initialRoute.editReturnView ?? 'provider')
   const [providerBackView, setProviderBackView] = useState<any>(initialRoute.providerBackView ?? 'board')
-  const [vacation, setVacation] = useState<any>({ start: '2026-09-01', end: '2026-09-12', description: 'El puesto permanecerá cerrado durante este período.', substitute: operatorDirectory[1] })
+  const [vacation, setVacation] = useState<any>({ start: '2026-09-01', end: '2026-09-12', description: 'El puesto permanecerá cerrado durante este período.', substitute: null })
   const [adminOperators, setAdminOperators] = useState<any>(operatorDirectory.map((entry, index) => {
     const [nave = '', puesto = ''] = entry.place.split(' · ')
     return { ...entry, id: `operator-${index + 1}`, nave, puesto: puesto.replace('Puesto ', ''), email: `operador${index + 1}@mercado.uy`, responsible: ['Martín Silva', 'Laura Gómez', 'Diego Pérez'][index % 3], whatsapp: `099100${String(index + 1).padStart(3, '0')}`, legalName: `${entry.name} SRL`, address: `UAM, ${entry.place}`, active: true }
@@ -103,7 +104,7 @@ export default function App() {
 
   const navigate = (nextView, path = staticViewRoutes[nextView] ?? '/') => {
     window.history.pushState({ view: nextView }, '', path)
-    applyRoute({ view: nextView, smartList: path === '/lista-inteligente' })
+    applyRoute(resolveRoute(path))
   }
 
   const usesDesktopPages = () => window.matchMedia('(min-width: 761px)').matches
@@ -151,7 +152,7 @@ export default function App() {
   }
 
   const catalogItems = [...products.filter((product) => catalogProductIds.includes(product.id)), ...customCatalogItems].map((product) => ({ ...product, ...(catalogOverrides[product.id] ?? {}) }))
-  const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} backLabel="Volver al pizarrón" onBack={() => navigate(role === 'producer' ? 'producerBoard' : 'board')} items={catalogItems} editable productRole={role} onCreate={(product) => setPublicationDrawer({ role, returnView, product })} onRemove={(productId) => { setCatalogProductIds((current) => current.filter((id) => id !== productId)); setCustomCatalogItems((current) => current.filter((product) => product.id !== productId)) }} onOpenProduct={(product) => openProductDrawer(product, role)} />
+  const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} items={catalogItems} editable productRole={role} onCreate={(product) => setPublicationDrawer({ role, returnView, product })} onRemove={(productId) => { setCatalogProductIds((current) => current.filter((id) => id !== productId)); setCustomCatalogItems((current) => current.filter((product) => product.id !== productId)) }} onOpenProduct={(product) => openProductDrawer(product, role)} />
   const saveAdminItem = (kind, item) => {
     const update = (current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
     if (kind === 'operator') setAdminOperators(update)
@@ -178,17 +179,19 @@ export default function App() {
       {view === 'resetPassword' && <ResetPasswordPage onComplete={() => navigate('login')} />}
       {view === 'operators' && <ActorDirectory eyebrow="Mercado de hoy" title="Operadores" description="Puestos de la UAM con mercadería y precios publicados." entries={operatorDirectory} filterLabel="Nave" getFilterValue={(entry) => entry.place.split(' · ')[0]} showLocationAction showWhatsapp highlightPlace onOpen={(entry) => openActorFromProduct(entry, entry.product, 'operator')} />}
       {view === 'producers' && <ActorDirectory eyebrow="Oferta de origen" title="Productores" description="Producción disponible para los operadores de la UAM." entries={producerDirectory} filterLabel="Departamento" getFilterValue={(entry) => entry.place.split(' · ')[0]} showWhatsapp onOpen={(entry) => openActorFromProduct(entry, entry.product, 'producer')} />}
-      {view === 'productDetail' && <ProductPanel asPage product={productPage?.product ?? products[0]} actorRole={productPage?.role ?? 'operator'} onBack={() => navigate(productPage?.backView ?? (productPage?.role === 'producer' ? 'producerBoard' : 'board'))} onOpenProvider={openActorFromProduct} />}
-      {view === 'provider' && (providerMarket ? <ProviderMarket operator={providerMarket.operator} originProduct={providerMarket.product} eyebrow="Mercado del operador" onBack={() => navigate(providerBackView)} onOpenProduct={(product) => openProductDrawer(product, 'operator')} productRole="operator" useActorProducts /> : renderCatalog('provider', 'operator'))}
-      {view === 'producerDetail' && <ProviderMarket operator={providerMarket?.operator ?? producerDirectory[0]} originProduct={providerMarket?.product ?? producerDirectory[0].product} eyebrow="Detalle del productor" backLabel="Volver a productores" onBack={() => navigate(providerBackView === 'producers' ? 'producers' : 'producerBoard')} onOpenProduct={(product) => openProductDrawer(product, 'producer')} productRole="producer" useActorProducts />}
+      {view === 'productDetail' && <ProductPanel asPage product={productPage?.product ?? products[0]} actorRole={productPage?.role ?? 'operator'} onOpenProvider={openActorFromProduct} />}
+      {view === 'provider' && (providerMarket ? <ProviderMarket operator={providerMarket.operator} originProduct={providerMarket.product} eyebrow="Mercado del operador" onOpenProduct={(product) => openProductDrawer(product, 'operator')} productRole="operator" useActorProducts /> : renderCatalog('provider', 'operator'))}
+      {view === 'producerDetail' && <ProviderMarket operator={providerMarket?.operator ?? producerDirectory[0]} originProduct={providerMarket?.product ?? producerDirectory[0].product} eyebrow="Detalle del productor" onOpenProduct={(product) => openProductDrawer(product, 'producer')} productRole="producer" useActorProducts />}
       {view === 'producerMarket' && renderCatalog('producerMarket', 'producer')}
       {view === 'vacations' && <VacationPage value={vacation} onSave={(nextVacation) => { setVacation(nextVacation); navigate('absentProvider') }} />}
-      {view === 'absentProvider' && <AbsentOperatorPage operator={operatorDirectory[0]} vacation={vacation} onBack={() => navigate('operators')} onOpenSubstitute={() => vacation.substitute && openDirectoryMarket(vacation.substitute, 'provider', 'absentProvider')} />}
-      {view === 'adminOperators' && <AdminManagementPage kind="operator" items={adminOperators} onCreate={() => setAdminEditor({ kind: 'operator', item: null })} onEdit={(item) => setAdminEditor({ kind: 'operator', item })} onDelete={(item) => setDeleteTarget({ kind: 'operator', item })} />}
-      {view === 'adminProducers' && <AdminManagementPage kind="producer" items={adminProducers} onCreate={() => setAdminEditor({ kind: 'producer', item: null })} onEdit={(item) => setAdminEditor({ kind: 'producer', item })} onDelete={(item) => setDeleteTarget({ kind: 'producer', item })} />}
-      {view === 'adminSmartList' && <AdminSmartListPage items={adminSmartItems} onCreate={() => setSmartEditor({ item: null })} onEdit={(item) => setSmartEditor({ item })} onDelete={(item) => setDeleteTarget({ kind: 'smart', item })} />}
-      {view === 'adminRecovery' && <RecoveryRequestsPage items={recoveryRequests} onResolve={(id) => setRecoveryRequests((current) => current.map((item) => item.id === id ? { ...item, status: 'Resuelta' } : item))} />}
-      {view === 'adminRevaluation' && <PriceRevaluationPage />}
+      {view === 'absentProvider' && <AbsentOperatorPage operator={operatorDirectory[0]} vacation={vacation} onOpenSubstitute={() => vacation.substitute && openDirectoryMarket(vacation.substitute, 'provider', 'absentProvider')} />}
+      {String(view).startsWith('admin') && <AdminWorkspace activeView={view} onNavigate={navigate}>
+        {view === 'adminOperators' && <AdminManagementPage kind="operator" items={adminOperators} onCreate={() => setAdminEditor({ kind: 'operator', item: null })} onEdit={(item) => setAdminEditor({ kind: 'operator', item })} onDelete={(item) => setDeleteTarget({ kind: 'operator', item })} />}
+        {view === 'adminProducers' && <AdminManagementPage kind="producer" items={adminProducers} onCreate={() => setAdminEditor({ kind: 'producer', item: null })} onEdit={(item) => setAdminEditor({ kind: 'producer', item })} onDelete={(item) => setDeleteTarget({ kind: 'producer', item })} />}
+        {view === 'adminSmartList' && <AdminSmartListPage items={adminSmartItems} onCreate={() => setSmartEditor({ item: null })} onEdit={(item) => setSmartEditor({ item })} onDelete={(item) => setDeleteTarget({ kind: 'smart', item })} />}
+        {view === 'adminRecovery' && <RecoveryRequestsPage items={recoveryRequests} onResolve={(id) => setRecoveryRequests((current) => current.map((item) => item.id === id ? { ...item, status: 'Resuelta' } : item))} />}
+        {view === 'adminRevaluation' && <PriceRevaluationPage />}
+      </AdminWorkspace>}
       {view === 'editPrice' && <EditPrice product={editingProduct ?? { ...products[0], ...(catalogOverrides[products[0].id] ?? {}) }} onSave={(nextProduct) => { setCatalogOverrides((current) => ({ ...current, [nextProduct.id]: nextProduct })); navigate(editReturnView) }} onCancel={() => navigate(editReturnView)} />}
       {entityDrawerStack.map((drawer) => drawer.type === 'product'
         ? <ProductPanel key={drawer.drawerId} product={drawer.product} actorRole={drawer.role} onClose={() => setEntityDrawerStack((current) => current.filter((entry) => entry.drawerId !== drawer.drawerId))} onOpenProvider={openActorFromProduct} onOpenPage={(product, role) => openProductPage(product, role)} />

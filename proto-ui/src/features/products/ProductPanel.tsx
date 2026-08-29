@@ -33,8 +33,9 @@ import Pagination from '../../shared/navigation/Pagination'
 import SortField from '../../shared/filters/SortField'
 import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
 import DrawerShell from '../../shared/layout/DrawerShell'
+import DetailSplitLayout from '../../shared/layout/DetailSplitLayout'
 import MediaModal from '../../shared/feedback/MediaModal'
-import OperatorOfferCard from '../../shared/cards/OperatorOfferCard'
+import ActorPublishedProductList from '../../shared/cards/ActorPublishedProductList'
 
 type ProductPanelProps = {
   product?: any
@@ -43,10 +44,9 @@ type ProductPanelProps = {
   onOpenPage?: any
   actorRole?: any
   asPage?: any
-  onBack?: any
 }
 
-export default function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole = 'operator', asPage = false, onBack }: ProductPanelProps) {
+export default function ProductPanel({ product, onClose, onOpenProvider, onOpenPage, actorRole = 'operator', asPage = false }: ProductPanelProps) {
   const [operatorQuery, setOperatorQuery] = useState<any>('')
   const [operatorSort, setOperatorSort] = useState<any>('price')
   const [selectedNave, setSelectedNave] = useState<any>('Todas')
@@ -110,22 +110,39 @@ export default function ProductPanel({ product, onClose, onOpenProvider, onOpenP
       <label><span>Categoría</span><select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}><option value="all">Todas</option>{categoryCatalog.map((entry) => <option value={entry.code} key={entry.code}>{entry.description} · {entry.code}</option>)}</select></label>
     </ListFilterToolbar>
     <div className="operator-list-heading"><h3>{actorPlural}</h3><span>{visibleOperators.length} de {actors.length}</span></div>
-    <div className="operator-list" ref={operatorListRef}>
-      {paginatedOperators.map((operator) => <OperatorOfferCard key={`${operator.name}-${operator.place}`} operator={operator} product={product} onOpen={() => onOpenProvider(operator, product, actorRole)} onOpenMedia={setMediaPreview} />)}
-      {visibleOperators.length === 0 && <p className="operator-empty">No hay {actorPlural.toLocaleLowerCase('es')} que coincidan con la búsqueda.</p>}
-    </div>
+    <ActorPublishedProductList
+      containerRef={operatorListRef}
+      emptyMessage={`No hay ${actorPlural.toLocaleLowerCase('es')} que coincidan con la búsqueda.`}
+      displayItems={paginatedOperators.map((operator) => ({
+        key: `${operator.name}-${operator.place}`,
+        image: operator.offerPhoto,
+        imageLabel: `Ampliar foto de ${operator.name}`,
+        onImageClick: operator.offerPhoto ? () => setMediaPreview({ src: operator.offerPhoto, alt: `Mercadería aportada por ${operator.name}` }) : null,
+        title: operator.name,
+        subtitle: operator.place,
+        ariaLabel: `Abrir mercado de ${operator.name}`,
+        onOpen: () => onOpenProvider(operator, product, actorRole),
+        actions: <><button type="button" onClick={(event) => event.stopPropagation()} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button><a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a></>,
+        rows: operator.priceOptions.map((option) => ({ key: option.key, label: `${option.label} · ${option.unit}`, price: option.price, photo: option.photo, photoLabel: `Ver foto de ${option.label}`, onOpenPhoto: option.photo ? () => setMediaPreview({ src: option.photo, alt: `${option.label} de ${operator.name}` }) : null })),
+      }))}
+    />
     <Pagination currentPage={currentPage} pageCount={pageCount} onChange={changePage} label={`Paginación de ${actorPlural.toLocaleLowerCase('es')}`} className="drawer-pagination" />
   </>
 
-  if (asPage) return <main className="product-details-page">
-    <section className="product-details-hero">
-      <button className="back-action" type="button" onClick={onBack}><ArrowLeft size={18} />Volver</button>
+  if (asPage) return <DetailSplitLayout
+    className="product-details-page"
+    asideClassName="product-details-hero"
+    asideContentClassName="product-details-hero-content"
+    contentClassName="product-details-offers"
+    aside={<>
       <img src={product.image} alt={product.name} />
       <div><p>{actorPlural}</p><h1>{product.name}</h1><span>{product.detail}</span></div>
-    </section>
-    <section className="product-details-offers">{offerContent}</section>
+    </>}
+  >
+    <div className="provider-products-heading"><div><p>Mercado de hoy</p><h2>{actorPlural} disponibles</h2></div><span>{visibleOperators.length} {actorPlural.toLocaleLowerCase('es')}</span></div>
+    {offerContent}
     {mediaPreview && <MediaModal src={mediaPreview.src} alt={mediaPreview.alt} onClose={() => setMediaPreview(null)} />}
-  </main>
+  </DetailSplitLayout>
 
   return (<>
     <DrawerShell onClose={onClose} labelledBy="product-panel-title" onOpenPage={onOpenPage ? () => onOpenPage(product, actorRole) : undefined}>

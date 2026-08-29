@@ -92,13 +92,13 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
         <header className="publication-panel-header" {...swipeProps}>
           <i className="actor-panel-handle" aria-hidden="true" />
           <p>{initialVariant ? 'Editar combinación' : initialProduct ? 'Nueva combinación' : 'Nueva publicación'}</p>
-          <h2 id="publication-panel-title">{initialVariant ? `Editar variante de ${initialProduct.name}` : initialProduct ? `Agregar variedad de ${initialProduct.name}` : 'Agregar producto'}</h2>
+          <h2 id="publication-panel-title">{initialVariant ? `Editar combinación de ${initialProduct.name}` : initialProduct ? `Agregar combinación de ${initialProduct.name}` : 'Agregar publicación'}</h2>
           <span>Seleccioná las características de la mercadería.</span>
         </header>
         <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); onSave(matchedProduct, draftProduct) }}>
           <ProductPriceFields productId={productId} onProductChange={selectProduct} lockProduct={Boolean(initialProduct)} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
-          {matchedProduct && <div className="existing-publication"><Check size={18} /><span><strong>Producto ya publicado</strong><small>Cargamos sus datos actuales para que puedas editarlos.</small></span></div>}
-          <button className="primary-submit" type="submit" disabled={!draftProduct}>{initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar producto'} <ArrowRight size={20} /></button>
+          {matchedProduct && <div className="existing-publication"><Check size={18} /><span><strong>Combinación ya publicada</strong><small>Cargamos sus datos actuales para que puedas editarlos.</small></span></div>}
+          <button className="primary-submit" type="submit" disabled={!draftProduct}>{initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar combinación'} <ArrowRight size={20} /></button>
         </form>
       </>}
     </DrawerShell>

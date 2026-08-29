@@ -62,7 +62,7 @@ export default function EditPrice({ product, onSave, onCancel }: EditPriceProps)
         <form onSubmit={(event) => { event.preventDefault(); if (updatedProduct) onSave(updatedProduct) }}>
           <div className="edit-product-summary"><img src={product.image} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} /><div><strong>{product.name}</strong><span>{product.detail}</span></div></div>
           <ProductPriceFields productId={String(definition.id)} onProductChange={() => { }} lockProduct variety={variety} setVariety={setVariety} unit={unit} setUnit={setUnit} presentation={presentation} setPresentation={setPresentation} calibre={calibre} setCalibre={setCalibre} category={category} setCategory={setCategory} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
-          <div className="availability-control"><div><b>Publicado hoy</b><span>Define si el producto aparece en tu catálogo.</span></div><button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button></div>
+          <div className="availability-control"><div><b>Publicado hoy</b><span>Define si la publicación aparece en tu mercado.</span></div><button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button></div>
           <button className="primary-submit" type="submit" disabled={!updatedProduct}>Guardar precio <Check size={20} /></button>
           <button className="text-action" type="button" onClick={onCancel}>Cancelar</button>
         </form>
