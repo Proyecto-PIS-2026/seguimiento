@@ -31,6 +31,7 @@ import {
 import { productWebserviceCatalog, getProductCombination, buildPricedProduct } from '../../shared'
 import DrawerShell from '../../shared/layout/DrawerShell'
 import ProductPriceFields from './ProductPriceFields'
+import useConfirmationTransition from '../../shared/forms/useConfirmationTransition'
 
 type PublicationPanelProps = {
   items?: any
@@ -52,6 +53,7 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
   const [category, setCategory] = useState<any>(initialCombination?.category ?? initialDefinition?.categories[0].code ?? '')
   const [photo, setPhoto] = useState<any>(initialVariant?.photo ?? '')
   const [price, setPrice] = useState<any>(initialVariant?.price?.match(/\d+/)?.[0] ?? '')
+  const { confirm, isSubmitting } = useConfirmationTransition()
 
   const selectedDefinition = productWebserviceCatalog.find((definition) => definition.id === Number(productId))
   const matchedProduct = items.find((item) => {
@@ -95,10 +97,10 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
           <h2 id="publication-panel-title">{initialVariant ? `Editar combinación de ${initialProduct.name}` : initialProduct ? `Agregar combinación de ${initialProduct.name}` : 'Agregar publicación'}</h2>
           <span>Seleccioná las características de la mercadería.</span>
         </header>
-        <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); onSave(matchedProduct, draftProduct) }}>
+        <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); confirm(() => onSave(matchedProduct, draftProduct), { success: `${initialVariant || matchedProduct ? 'Combinación actualizada' : 'Combinación publicada'} correctamente.` }) }}>
           <ProductPriceFields productId={productId} onProductChange={selectProduct} lockProduct={Boolean(initialProduct)} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
           {matchedProduct && <div className="existing-publication"><Check size={18} /><span><strong>Combinación ya publicada</strong><small>Cargamos sus datos actuales para que puedas editarlos.</small></span></div>}
-          <button className="primary-submit" type="submit" disabled={!draftProduct}>{initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar combinación'} <ArrowRight size={20} /></button>
+          <button className="primary-submit" type="submit" disabled={!draftProduct || isSubmitting}>{isSubmitting ? 'Confirmando…' : initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar combinación'} <ArrowRight size={20} /></button>
         </form>
       </>}
     </DrawerShell>

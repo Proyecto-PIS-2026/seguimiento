@@ -28,6 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
+import useConfirmationTransition from '../../shared/forms/useConfirmationTransition'
 
 type PublishProps = {
   onDone?: any
@@ -37,6 +38,7 @@ export default function Publish({ onDone }: PublishProps) {
   const [available, setAvailable] = useState<any>(true)
   const [photo, setPhoto] = useState<any>('')
   const [saved, setSaved] = useState<any>(false)
+  const { confirm, isSubmitting } = useConfirmationTransition()
 
   const handlePhoto = (event) => {
     const file = event.target.files?.[0]
@@ -45,7 +47,7 @@ export default function Publish({ onDone }: PublishProps) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    setSaved(true)
+    confirm(() => setSaved(true), { success: 'Precio publicado correctamente.' })
   }
 
   if (saved) {
@@ -98,7 +100,7 @@ export default function Publish({ onDone }: PublishProps) {
             <button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button>
           </div>
 
-          <button className="primary-submit" type="submit">Publicar precio <ArrowRight size={20} /></button>
+          <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Publicando…' : 'Publicar precio'} <ArrowRight size={20} /></button>
         </form>
       </section>
     </main>

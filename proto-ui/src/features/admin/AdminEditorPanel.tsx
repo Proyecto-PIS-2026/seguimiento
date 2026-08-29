@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react'
 import DrawerShell from '../../shared/layout/DrawerShell'
+import useConfirmationTransition from '../../shared/forms/useConfirmationTransition'
 
 type AdminEditorPanelProps = {
   kind?: any
@@ -48,11 +49,15 @@ export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminE
   const [address, setAddress] = useState<any>(item?.address ?? item?.place ?? '')
   const [resetSent, setResetSent] = useState<any>(false)
   const [active, setActive] = useState<any>(item?.active !== false)
+  const { confirm, isSubmitting } = useConfirmationTransition()
   const title = `${item ? 'Modificar' : 'Agregar'} ${kind === 'producer' ? 'productor' : 'operador'}`
   const submit = (event) => {
     event.preventDefault()
     const place = kind === 'operator' ? `${nave} · Puesto ${puesto}` : address
-    onSave({ ...item, id: item?.id ?? Date.now(), name, place, nave, puesto, email, responsible, whatsapp, legalName, address, active })
+    confirm(
+      () => onSave({ ...item, id: item?.id ?? Date.now(), name, place, nave, puesto, email, responsible, whatsapp, legalName, address, active }),
+      { success: `${kind === 'producer' ? 'Productor' : 'Operador'} ${item ? 'actualizado' : 'creado'} correctamente.` },
+    )
   }
   return (
     <DrawerShell onClose={onClose} labelledBy="admin-editor-title" className="admin-editor-panel">
@@ -72,7 +77,7 @@ export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminE
           </div>
           {item && <div className="password-reset-control"><div><b>Contraseña de acceso</b><span>{resetSent ? `Contraseña borrada. Enviamos un enlace a ${email}.` : 'El usuario recibirá por email un enlace de un solo uso.'}</span></div><button type="button" onClick={() => setResetSent(true)} disabled={resetSent}><KeyRound size={17} />{resetSent ? 'Email enviado' : 'Resetear contraseña'}</button></div>}
           <div className="availability-control"><div><b>Registro activo</b><span>Permite utilizar este registro en el sistema.</span></div><button className={active ? 'switch on' : 'switch'} type="button" onClick={() => setActive((value) => !value)} aria-pressed={active}><i /></button></div>
-          <button className="primary-submit" type="submit">Guardar <Check size={20} /></button>
+          <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Guardando…' : 'Guardar'} <Check size={20} /></button>
         </form>
       </>}
     </DrawerShell>

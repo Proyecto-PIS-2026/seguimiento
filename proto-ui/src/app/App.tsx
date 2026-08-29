@@ -53,6 +53,10 @@ import SmartRecommendationPanel from '../features/admin/SmartRecommendationPanel
 import RecoveryRequestsPage from '../features/admin/RecoveryRequestsPage'
 import PriceRevaluationPage from '../features/admin/PriceRevaluationPage'
 import AdminWorkspace from '../features/admin/AdminWorkspace'
+import LinearNavigationLoader from '../shared/navigation/LinearNavigationLoader'
+import { LINEAR_LOADER_EVENT } from '../shared/navigation/linearLoader'
+import OperationNotification from '../shared/feedback/OperationNotification'
+import { OPERATION_NOTIFICATION_EVENT, type OperationNotificationDetail } from '../shared/feedback/operationNotifications'
 
 export default function App() {
   const initialRoute = useMemo(() => resolveRoute(window.location.pathname), [])
@@ -81,8 +85,22 @@ export default function App() {
   const [adminEditor, setAdminEditor] = useState<any>(null)
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
   const [smartEditor, setSmartEditor] = useState<any>(null)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const navigationLoaderTimer = useRef<number | null>(null)
+  const notificationSequence = useRef(0)
+  const [operationNotifications, setOperationNotifications] = useState<Array<OperationNotificationDetail & { id: number }>>([])
+
+  const showNavigationLoader = (duration = 420) => {
+    if (navigationLoaderTimer.current !== null) window.clearTimeout(navigationLoaderTimer.current)
+    setIsNavigating(true)
+    navigationLoaderTimer.current = window.setTimeout(() => {
+      setIsNavigating(false)
+      navigationLoaderTimer.current = null
+    }, duration)
+  }
 
   const applyRoute = (route) => {
+    showNavigationLoader()
     setEntityDrawerStack([])
     setPublicationDrawer(null)
     setProviderMarket(route.providerMarket ?? null)
@@ -102,6 +120,29 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  useEffect(() => {
+    const handleOperationNotification = (event: Event) => {
+      notificationSequence.current += 1
+      const detail = (event as CustomEvent<OperationNotificationDetail>).detail
+      setOperationNotifications((current) => [...current, { ...detail, id: notificationSequence.current }])
+    }
+    window.addEventListener(OPERATION_NOTIFICATION_EVENT, handleOperationNotification)
+    return () => window.removeEventListener(OPERATION_NOTIFICATION_EVENT, handleOperationNotification)
+  }, [])
+
+  useEffect(() => () => {
+    if (navigationLoaderTimer.current !== null) window.clearTimeout(navigationLoaderTimer.current)
+  }, [])
+
+  useEffect(() => {
+    const handleLinearLoader = (event: Event) => {
+      const duration = (event as CustomEvent<{ duration?: number }>).detail?.duration
+      showNavigationLoader(duration)
+    }
+    window.addEventListener(LINEAR_LOADER_EVENT, handleLinearLoader)
+    return () => window.removeEventListener(LINEAR_LOADER_EVENT, handleLinearLoader)
+  }, [])
+
   const navigate = (nextView, path = staticViewRoutes[nextView] ?? '/') => {
     window.history.pushState({ view: nextView }, '', path)
     applyRoute(resolveRoute(path))
@@ -109,6 +150,7 @@ export default function App() {
 
   const usesDesktopPages = () => window.matchMedia('(min-width: 761px)').matches
   const openProductPage = (product, role = 'operator', backView = view) => {
+    showNavigationLoader()
     setProductPage({ product, role, backView })
     setEntityDrawerStack([])
     setView('productDetail')
@@ -142,6 +184,7 @@ export default function App() {
   }
 
   const openDirectoryMarket = (entry, nextView, backView) => {
+    showNavigationLoader()
     setEntityDrawerStack([])
     setProviderMarket({ operator: entry, product: entry.product })
     setProviderBackView(backView)
@@ -169,6 +212,10 @@ export default function App() {
   return (
     <div className="app-shell">
       <Header view={view} onNavigate={navigate} isAuthenticated={isAuthenticated} onLogout={() => { setIsAuthenticated(false); navigate('board') }} />
+      <LinearNavigationLoader active={isNavigating} />
+      <div className="operation-notification-stack" aria-live="polite">
+        {operationNotifications.map((notification) => <OperationNotification key={notification.id} type={notification.type} message={notification.message} onDismiss={() => setOperationNotifications((current) => current.filter((item) => item.id !== notification.id))} />)}
+      </div>
       {view === 'board' && <Board onOpenProduct={openProductDrawer} />}
       {view === 'producerBoard' && <Board producerMode onOpenProduct={openProductDrawer} />}
       {view === 'publish' && <Publish onDone={() => navigate('board')} />}

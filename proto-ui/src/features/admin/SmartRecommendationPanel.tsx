@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react'
 import DrawerShell from '../../shared/layout/DrawerShell'
+import useConfirmationTransition from '../../shared/forms/useConfirmationTransition'
 
 type SmartRecommendationPanelProps = {
   item?: any
@@ -40,6 +41,7 @@ type SmartRecommendationPanelProps = {
 export default function SmartRecommendationPanel({ item, availableProducts, onClose, onSave }: SmartRecommendationPanelProps) {
   const [productId, setProductId] = useState<any>(String(item?.product.id ?? availableProducts[0]?.id ?? ''))
   const [description, setDescription] = useState<any>(item?.description ?? '')
+  const { confirm, isSubmitting } = useConfirmationTransition()
   return (
     <DrawerShell onClose={onClose} labelledBy="smart-editor-title" className="admin-editor-panel">
       {(swipeProps) => <>
@@ -49,12 +51,12 @@ export default function SmartRecommendationPanel({ item, availableProducts, onCl
           <h2 id="smart-editor-title">{item ? 'Modificar' : 'Agregar'} recomendación</h2>
           <span>Explicá por qué conviene elegir este producto.</span>
         </header>
-        <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); onSave({ id: item?.id ?? Date.now(), product: availableProducts.find((product) => product.id === Number(productId)), description }) }}>
+        <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); confirm(() => onSave({ id: item?.id ?? Date.now(), product: availableProducts.find((product) => product.id === Number(productId)), description }), { success: `Recomendación ${item ? 'actualizada' : 'creada'} correctamente.` }) }}>
           <div className="field-grid">
             <label className="field wide"><span>Producto</span><select value={productId} onChange={(event) => setProductId(event.target.value)}>{availableProducts.map((product) => <option value={product.id} key={product.id}>{product.name}</option>)}</select></label>
             <label className="field wide"><span>Motivo de la recomendación</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} required /></label>
           </div>
-          <button className="primary-submit" type="submit">Guardar <Check size={20} /></button>
+          <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Guardando…' : 'Guardar'} <Check size={20} /></button>
         </form>
       </>}
     </DrawerShell>

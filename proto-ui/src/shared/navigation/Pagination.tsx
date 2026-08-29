@@ -28,6 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
+import { showLinearLoader } from './linearLoader'
 
 type PaginationProps = {
   currentPage?: any
@@ -39,11 +40,16 @@ type PaginationProps = {
 
 export default function Pagination({ currentPage, pageCount, onChange, label, className = '' }: PaginationProps) {
   if (pageCount <= 1) return null
+  const changePage = (page) => {
+    if (page === currentPage) return
+    showLinearLoader(480)
+    onChange(page)
+  }
   return (
     <nav className={`pagination ${className}`.trim()} aria-label={label}>
-      <button type="button" disabled={currentPage === 1} onClick={() => onChange(Math.max(1, currentPage - 1))} aria-label="Página anterior"><ChevronLeft size={19} /></button>
-      {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button className={currentPage === page ? 'active' : ''} type="button" key={page} onClick={() => onChange(page)} aria-label={`Página ${page}`} aria-current={currentPage === page ? 'page' : undefined}>{page}</button>)}
-      <button type="button" disabled={currentPage === pageCount} onClick={() => onChange(Math.min(pageCount, currentPage + 1))} aria-label="Página siguiente"><ChevronRight size={19} /></button>
+      <button type="button" disabled={currentPage === 1} onClick={() => changePage(Math.max(1, currentPage - 1))} aria-label="Página anterior"><ChevronLeft size={19} /></button>
+      {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button className={currentPage === page ? 'active' : ''} type="button" key={page} onClick={() => changePage(page)} aria-label={`Página ${page}`} aria-current={currentPage === page ? 'page' : undefined}>{page}</button>)}
+      <button type="button" disabled={currentPage === pageCount} onClick={() => changePage(Math.min(pageCount, currentPage + 1))} aria-label="Página siguiente"><ChevronRight size={19} /></button>
     </nav>
   )
 }
