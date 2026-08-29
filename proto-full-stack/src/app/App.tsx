@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
@@ -57,36 +59,15 @@ import LinearNavigationLoader from '../shared/navigation/LinearNavigationLoader'
 import { LINEAR_LOADER_EVENT } from '../shared/navigation/linearLoader'
 import OperationNotification from '../shared/feedback/OperationNotification'
 import { OPERATION_NOTIFICATION_EVENT, type OperationNotificationDetail } from '../shared/feedback/operationNotifications'
+import { saveActorRecord } from '../lib/api/client'
 
-const TITLE_SUFFIX = 'MFH - UAM'
-
-const viewTitles: Record<string, string> = {
-  board: 'Pizarrón',
-  producerBoard: 'Pizarrón de productores',
-  publish: 'Publicar producto',
-  login: 'Ingresar',
-  twoFactorChallenge: 'Verificación en dos pasos',
-  twoFactorSetup: 'Configurar verificación en dos pasos',
-  recovery: 'Recuperar contraseña',
-  resetPassword: 'Restablecer contraseña',
-  operators: 'Operadores',
-  producers: 'Productores',
-  provider: 'Mi mercado',
-  producerDetail: 'Detalle del productor',
-  producerMarket: 'Mi mercado de productor',
-  vacations: 'Programar vacaciones',
-  absentProvider: 'Operador ausente',
-  adminOperators: 'Administración de operadores',
-  adminProducers: 'Administración de productores',
-  adminSmartList: 'Administración de lista inteligente',
-  adminRecovery: 'Recuperación de cuentas',
-  adminRevaluation: 'Revalorización de precios',
+type AppProps = {
+  initialPath: string
 }
 
-export default function App() {
-  const initialRoute = useMemo(() => resolveRoute(window.location.pathname), [])
+export default function App({ initialPath }: AppProps) {
+  const initialRoute = useMemo(() => resolveRoute(initialPath), [initialPath])
   const [view, setView] = useState<any>(initialRoute.view)
-  const [currentPath, setCurrentPath] = useState(window.location.pathname)
   const [entityDrawerStack, setEntityDrawerStack] = useState<any>([])
   const drawerSequence = useRef(0)
   const [productPage, setProductPage] = useState<any>(initialRoute.productPage ?? null)
@@ -116,18 +97,6 @@ export default function App() {
   const notificationSequence = useRef(0)
   const [operationNotifications, setOperationNotifications] = useState<Array<OperationNotificationDetail & { id: number }>>([])
 
-  useEffect(() => {
-    let pageTitle = viewTitles[view] ?? 'Pizarrón'
-
-    if (currentPath === '/lista-inteligente') pageTitle = 'Lista inteligente'
-    if (view === 'productDetail' && productPage?.product?.name) pageTitle = productPage.product.name
-    if (view === 'provider' && providerMarket?.operator?.name) pageTitle = providerMarket.operator.name
-    if (view === 'producerDetail') pageTitle = providerMarket?.operator?.name ?? producerDirectory[0].name
-    if (view === 'editPrice' && editingProduct?.name) pageTitle = `Editar precio de ${editingProduct.name}`
-
-    document.title = `${pageTitle} | ${TITLE_SUFFIX}`
-  }, [currentPath, editingProduct, productPage, providerMarket, view])
-
   const showNavigationLoader = (duration = 420) => {
     if (navigationLoaderTimer.current !== null) window.clearTimeout(navigationLoaderTimer.current)
     setIsNavigating(true)
@@ -139,7 +108,6 @@ export default function App() {
 
   const applyRoute = (route) => {
     showNavigationLoader()
-    setCurrentPath(window.location.pathname)
     setEntityDrawerStack([])
     setPublicationDrawer(null)
     setProviderMarket(route.providerMarket ?? null)
@@ -193,9 +161,7 @@ export default function App() {
     setProductPage({ product, role, backView })
     setEntityDrawerStack([])
     setView('productDetail')
-    const path = `/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`
-    window.history.pushState({ view: 'productDetail' }, '', path)
-    setCurrentPath(path)
+    window.history.pushState({ view: 'productDetail' }, '', `/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -232,16 +198,16 @@ export default function App() {
     setView(nextView)
     const path = nextView === 'producerDetail' ? `/productores/${slugify(entry.name)}` : `/operadores/${slugify(entry.name)}`
     window.history.pushState({ view: nextView }, '', path)
-    setCurrentPath(path)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   const catalogItems = [...products.filter((product) => catalogProductIds.includes(product.id)), ...customCatalogItems].map((product) => ({ ...product, ...(catalogOverrides[product.id] ?? {}) }))
   const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} items={catalogItems} editable productRole={role} onCreate={(product) => setPublicationDrawer({ role, returnView, product })} onRemove={(productId) => { setCatalogProductIds((current) => current.filter((id) => id !== productId)); setCustomCatalogItems((current) => current.filter((product) => product.id !== productId)) }} onOpenProduct={(product) => openProductDrawer(product, role)} />
-  const saveAdminItem = (kind, item) => {
-    const update = (current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
-    if (kind === 'operator') setAdminOperators(update)
-    else if (kind === 'producer') setAdminProducers(update)
+  const saveAdminItem = async (kind, item) => {
+    const savedItem = await saveActorRecord(kind, item)
+    const updateWithSavedItem = (current) => current.some((entry) => entry.id === savedItem.id) ? current.map((entry) => entry.id === savedItem.id ? savedItem : entry) : [...current, savedItem]
+    if (kind === 'operator') setAdminOperators(updateWithSavedItem)
+    else if (kind === 'producer') setAdminProducers(updateWithSavedItem)
     setAdminEditor(null)
   }
   const confirmAdminDelete = () => {
