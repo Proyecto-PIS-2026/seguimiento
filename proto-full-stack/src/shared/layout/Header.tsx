@@ -85,10 +85,10 @@ export default function Header({ view, onNavigate, isAuthenticated, onLogout }: 
   }
 
   const prototypeGroups = [
-    { title: 'Cliente', items: [{ label: 'Ver el pizarrón', view: 'board' }, { label: 'Ver la lista inteligente', view: 'board', smart: true }, { label: 'Ver la lista de operadores', view: 'operators' }, { label: 'Ver detalles de un operador', view: 'provider', path: '/operadores/granja-san-jose' }] },
-    { title: 'Operador', items: [{ label: 'Ver su mercado', view: 'provider' }, { label: 'Ver pizarrón de productores', view: 'producerBoard' }, { label: 'Ver lista de productores', view: 'producers' }, { label: 'Ver detalle de un productor', view: 'producerDetail' }, { label: 'Vacaciones', view: 'vacations' }, { label: 'Operador ausente', view: 'absentProvider' }] },
-    { title: 'Productor', items: [{ label: 'Ver su mercado', view: 'producerMarket' }] },
-    { title: 'Administrador', items: [{ label: 'Mantenimiento de operadores', view: 'adminOperators' }, { label: 'Mantenimiento de productores', view: 'adminProducers' }, { label: 'Mantenimiento de lista inteligente', view: 'adminSmartList' }, { label: 'Solicitudes de recuperación', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }] },
+    { title: 'Cliente', items: [{ label: 'Pizarrón', view: 'board' }, { label: 'Lista inteligente', view: 'board', smart: true }, { label: 'Operadores', view: 'operators' }, { label: 'Detalles de un operador', view: 'provider', path: '/operadores/granja-san-jose' }] },
+    { title: 'Operador', items: [{ label: 'Mi mercado', view: 'provider' }, { label: 'Pizarrón de productores', view: 'producerBoard' }, { label: 'Lista de productores', view: 'producers' }, { label: 'Detalles de un productor', view: 'producerDetail' }, { label: 'Programar vacaciones', view: 'vacations' }, { label: 'Vista de operador ausente', view: 'absentProvider' }] },
+    { title: 'Productor', items: [{ label: 'Mi mercado', view: 'producerMarket' }] },
+    { title: 'Administrador', items: [{ label: 'Operadores', view: 'adminOperators' }, { label: 'Productores', view: 'adminProducers' }, { label: 'Lista inteligente', view: 'adminSmartList' }, { label: 'Recuperación de cuentas', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }] },
     { title: 'Seguridad', items: [{ label: 'Ingresar', view: 'login' }, { label: 'Ingresar con 2FA', view: 'twoFactorChallenge' }, { label: 'Configurar 2FA', view: 'twoFactorSetup' }, { label: 'Recuperar contraseña', view: 'recovery' }, { label: 'Restablecer contraseña', view: 'resetPassword' }] },
   ]
   const openPrototypeItem = (item) => {

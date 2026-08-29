@@ -60,6 +60,7 @@ import { LINEAR_LOADER_EVENT } from '../shared/navigation/linearLoader'
 import OperationNotification from '../shared/feedback/OperationNotification'
 import { OPERATION_NOTIFICATION_EVENT, type OperationNotificationDetail } from '../shared/feedback/operationNotifications'
 import { saveActorRecord } from '../lib/api/client'
+import { getRouteDocumentTitle } from '../lib/metadata/routeTitles'
 
 type AppProps = {
   initialPath: string
@@ -68,6 +69,7 @@ type AppProps = {
 export default function App({ initialPath }: AppProps) {
   const initialRoute = useMemo(() => resolveRoute(initialPath), [initialPath])
   const [view, setView] = useState<any>(initialRoute.view)
+  const [currentPath, setCurrentPath] = useState(initialPath)
   const [entityDrawerStack, setEntityDrawerStack] = useState<any>([])
   const drawerSequence = useRef(0)
   const [productPage, setProductPage] = useState<any>(initialRoute.productPage ?? null)
@@ -97,6 +99,10 @@ export default function App({ initialPath }: AppProps) {
   const notificationSequence = useRef(0)
   const [operationNotifications, setOperationNotifications] = useState<Array<OperationNotificationDetail & { id: number }>>([])
 
+  useEffect(() => {
+    document.title = getRouteDocumentTitle(currentPath)
+  }, [currentPath])
+
   const showNavigationLoader = (duration = 420) => {
     if (navigationLoaderTimer.current !== null) window.clearTimeout(navigationLoaderTimer.current)
     setIsNavigating(true)
@@ -108,6 +114,7 @@ export default function App({ initialPath }: AppProps) {
 
   const applyRoute = (route) => {
     showNavigationLoader()
+    setCurrentPath(window.location.pathname)
     setEntityDrawerStack([])
     setPublicationDrawer(null)
     setProviderMarket(route.providerMarket ?? null)
@@ -161,7 +168,9 @@ export default function App({ initialPath }: AppProps) {
     setProductPage({ product, role, backView })
     setEntityDrawerStack([])
     setView('productDetail')
-    window.history.pushState({ view: 'productDetail' }, '', `/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`)
+    const path = `/productos/${product.id}/${role === 'producer' ? 'productores' : 'operadores'}`
+    window.history.pushState({ view: 'productDetail' }, '', path)
+    setCurrentPath(path)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -198,6 +207,7 @@ export default function App({ initialPath }: AppProps) {
     setView(nextView)
     const path = nextView === 'producerDetail' ? `/productores/${slugify(entry.name)}` : `/operadores/${slugify(entry.name)}`
     window.history.pushState({ view: nextView }, '', path)
+    setCurrentPath(path)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
