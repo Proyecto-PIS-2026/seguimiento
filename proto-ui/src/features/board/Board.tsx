@@ -94,7 +94,7 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
         </div>
         <div className="hero-visual" aria-hidden="true">
           <img src="https://images.unsplash.com/photo-1619153422227-08d462800327?auto=format&fit=crop&w=1200&q=88" alt="" />
-          <div className="hero-note"><b>147</b><span>productos con<br />precio hoy</span></div>
+          <div className="hero-note"><b>147</b><span>productos publicados<br />hoy</span></div>
         </div>
       </section>
 
