@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { measureUnits, calibreCatalog, categoryCatalog, productWebserviceCatalog } from '../shared'
+import { measureUnits, calibreCatalog, categoryCatalog, productWebserviceCatalog } from '../../shared'
 
 type ProductFilterFieldsProps = {
   priceFilter?: any

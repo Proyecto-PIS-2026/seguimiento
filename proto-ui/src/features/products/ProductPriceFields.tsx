@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { measureUnits, productWebserviceCatalog } from '../shared'
+import { measureUnits, productWebserviceCatalog } from '../../shared'
 
 type ProductPriceFieldsProps = {
   productId?: any

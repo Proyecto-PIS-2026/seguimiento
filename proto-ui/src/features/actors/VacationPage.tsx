@@ -28,8 +28,8 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { actorOptionKey, vacationReplacementOptions } from '../shared'
-import SimpleFormLayout from './SimpleFormLayout'
+import { actorOptionKey, vacationReplacementOptions } from '../../shared'
+import SimpleFormLayout from '../../shared/layout/SimpleFormLayout'
 
 type VacationPageProps = {
   value?: any

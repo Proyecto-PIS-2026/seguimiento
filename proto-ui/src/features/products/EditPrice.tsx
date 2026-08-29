@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { fallbackProductImage, productWebserviceCatalog, getProductCombination, buildPricedProduct } from '../shared'
+import { fallbackProductImage, productWebserviceCatalog, getProductCombination, buildPricedProduct } from '../../shared'
 import ProductPriceFields from './ProductPriceFields'
 
 type EditPriceProps = {

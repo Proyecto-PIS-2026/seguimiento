@@ -28,8 +28,8 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { products, smartPicks } from '../shared'
-import SmartListItem from './SmartListItem'
+import { products, smartPicks } from '../../shared'
+import SmartListItem from '../../shared/cards/SmartListItem'
 
 type SmartProductListProps = {
   onOpenProduct?: any

@@ -28,15 +28,15 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { products, calendarDays, usePageTransition, productMatchesFilters, getActorPublishedProducts } from '../shared'
-import Pagination from './Pagination'
-import ProductFilterFields from './ProductFilterFields'
-import SortField from './SortField'
-import ListFilterToolbar from './ListFilterToolbar'
-import MediaModal from './MediaModal'
-import ConfirmModal from './ConfirmModal'
-import ActorPublishedProductList from './ActorPublishedProductList'
-import PublicationPanel from './PublicationPanel'
+import { products, calendarDays, usePageTransition, productMatchesFilters, getActorPublishedProducts } from '../../shared'
+import Pagination from '../../shared/navigation/Pagination'
+import ProductFilterFields from '../../shared/filters/ProductFilterFields'
+import SortField from '../../shared/filters/SortField'
+import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
+import MediaModal from '../../shared/feedback/MediaModal'
+import ConfirmModal from '../../shared/feedback/ConfirmModal'
+import ActorPublishedProductList from '../../shared/cards/ActorPublishedProductList'
+import PublicationPanel from '../products/PublicationPanel'
 
 type ProviderMarketProps = {
   operator?: any

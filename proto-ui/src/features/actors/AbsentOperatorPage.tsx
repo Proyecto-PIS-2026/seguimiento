@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { formatShortDate } from '../shared'
+import { formatShortDate } from '../../shared'
 
 type AbsentOperatorPageProps = {
   operator?: any

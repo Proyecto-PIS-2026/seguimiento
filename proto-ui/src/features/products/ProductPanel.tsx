@@ -28,13 +28,13 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { producerDirectory, measureUnits, calibreCatalog, categoryCatalog, productWebserviceCatalog, getOperatorPriceOptions } from '../shared'
-import Pagination from './Pagination'
-import SortField from './SortField'
-import ListFilterToolbar from './ListFilterToolbar'
-import DrawerShell from './DrawerShell'
-import MediaModal from './MediaModal'
-import OperatorOfferCard from './OperatorOfferCard'
+import { producerDirectory, measureUnits, calibreCatalog, categoryCatalog, productWebserviceCatalog, getOperatorPriceOptions } from '../../shared'
+import Pagination from '../../shared/navigation/Pagination'
+import SortField from '../../shared/filters/SortField'
+import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
+import DrawerShell from '../../shared/layout/DrawerShell'
+import MediaModal from '../../shared/feedback/MediaModal'
+import OperatorOfferCard from '../../shared/cards/OperatorOfferCard'
 
 type ProductPanelProps = {
   product?: any

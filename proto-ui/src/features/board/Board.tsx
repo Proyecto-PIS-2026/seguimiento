@@ -28,13 +28,13 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { products, usePageTransition, productMatchesFilters } from '../shared'
-import Pagination from './Pagination'
-import ProductFilterFields from './ProductFilterFields'
-import SortField from './SortField'
-import ListFilterToolbar from './ListFilterToolbar'
+import { products, usePageTransition, productMatchesFilters } from '../../shared'
+import Pagination from '../../shared/navigation/Pagination'
+import ProductFilterFields from '../../shared/filters/ProductFilterFields'
+import SortField from '../../shared/filters/SortField'
+import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
 import SmartProductList from './SmartProductList'
-import BoardProductCard from './BoardProductCard'
+import BoardProductCard from '../../shared/cards/BoardProductCard'
 
 type BoardProps = {
   onOpenProduct?: any

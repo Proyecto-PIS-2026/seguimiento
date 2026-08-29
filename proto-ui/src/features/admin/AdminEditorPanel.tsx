@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import DrawerShell from './DrawerShell'
+import DrawerShell from '../../shared/layout/DrawerShell'
 
 type AdminEditorPanelProps = {
   kind?: any

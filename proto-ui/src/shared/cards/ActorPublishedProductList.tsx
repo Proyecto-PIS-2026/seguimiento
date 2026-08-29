@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions } from '../shared'
+import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions } from '../../shared'
 
 type ActorPublishedProductListProps = {
   entry?: any

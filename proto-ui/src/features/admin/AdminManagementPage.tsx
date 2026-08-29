@@ -28,11 +28,11 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { usePageTransition } from '../shared'
-import Pagination from './Pagination'
-import SortField from './SortField'
-import ListFilterToolbar from './ListFilterToolbar'
-import ActorDirectoryListItem from './ActorDirectoryListItem'
+import { usePageTransition } from '../../shared'
+import Pagination from '../../shared/navigation/Pagination'
+import SortField from '../../shared/filters/SortField'
+import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
+import ActorDirectoryListItem from '../../shared/cards/ActorDirectoryListItem'
 import AdminHeader from './AdminHeader'
 
 type AdminManagementPageProps = {

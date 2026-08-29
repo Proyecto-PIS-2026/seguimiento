@@ -28,9 +28,9 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import SortField from './SortField'
-import ListFilterToolbar from './ListFilterToolbar'
-import BoardProductCard from './BoardProductCard'
+import SortField from '../../shared/filters/SortField'
+import ListFilterToolbar from '../../shared/filters/ListFilterToolbar'
+import BoardProductCard from '../../shared/cards/BoardProductCard'
 import AdminHeader from './AdminHeader'
 
 type AdminSmartListPageProps = {

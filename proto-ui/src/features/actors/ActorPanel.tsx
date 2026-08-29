@@ -28,10 +28,10 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { products, getActorPublishedProducts } from '../shared'
-import DrawerShell from './DrawerShell'
-import MediaModal from './MediaModal'
-import ActorPublishedProductList from './ActorPublishedProductList'
+import { products, getActorPublishedProducts } from '../../shared'
+import DrawerShell from '../../shared/layout/DrawerShell'
+import MediaModal from '../../shared/feedback/MediaModal'
+import ActorPublishedProductList from '../../shared/cards/ActorPublishedProductList'
 
 type ActorPanelProps = {
   entry?: any

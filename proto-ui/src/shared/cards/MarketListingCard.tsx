@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { fallbackProductImage } from '../shared'
+import { fallbackProductImage } from '../../shared'
 
 type MarketListingCardProps = {
   className?: any

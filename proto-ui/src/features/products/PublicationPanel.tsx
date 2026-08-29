@@ -28,8 +28,8 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { productWebserviceCatalog, getProductCombination, buildPricedProduct } from '../shared'
-import DrawerShell from './DrawerShell'
+import { productWebserviceCatalog, getProductCombination, buildPricedProduct } from '../../shared'
+import DrawerShell from '../../shared/layout/DrawerShell'
 import ProductPriceFields from './ProductPriceFields'
 
 type PublicationPanelProps = {
