@@ -107,7 +107,6 @@ export default function Header({ view, onNavigate, isAuthenticated, onLogout }: 
         <nav className="desktop-nav" aria-label="Navegación principal">
           <button className={view === 'board' ? 'nav-link active' : 'nav-link'} type="button" onClick={() => onNavigate('board')}>Pizarrón</button>
           <a href="/lista-inteligente" onClick={(event) => { event.preventDefault(); onNavigate('board', '/lista-inteligente'); window.setTimeout(() => document.getElementById('inteligente')?.scrollIntoView({ behavior: 'smooth' }), 0) }}>Lista inteligente</a>
-          <button type="button" onClick={() => onNavigate('publish')}>Publicar</button>
           <button className={desktopMenuOpen ? 'prototype-menu-trigger active' : 'prototype-menu-trigger'} type="button" onClick={() => setDesktopMenuOpen((value) => !value)} aria-expanded={desktopMenuOpen} aria-controls="desktop-prototype-menu" aria-label={desktopMenuOpen ? 'Cerrar menú de pantallas' : 'Abrir menú de pantallas'}><Menu size={20} /></button>
           <button className="quiet" type="button" onClick={handleAccount}>{isAuthenticated ? 'Salir' : 'Ingresar'}</button>
         </nav>
