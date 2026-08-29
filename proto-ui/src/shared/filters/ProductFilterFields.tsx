@@ -54,14 +54,16 @@ type ProductFilterFieldsProps = {
 export default function ProductFilterFields({ groupFilter, setGroupFilter, speciesFilter, setSpeciesFilter, priceFilter, setPriceFilter, varietyFilter, setVarietyFilter, presentationFilter, setPresentationFilter, calibreFilter, setCalibreFilter, categoryFilter, setCategoryFilter, naveFilter, setNaveFilter, unitFilter, setUnitFilter }: ProductFilterFieldsProps) {
   const groups = [...new Set<any>(productWebserviceCatalog.map((entry) => entry.group))].sort((a, b) => a.localeCompare(b, 'es'))
   const species = [...new Set<any>(productWebserviceCatalog.filter((entry) => groupFilter === 'all' || entry.group === groupFilter).map((entry) => entry.species))].sort((a, b) => a.localeCompare(b, 'es'))
-  const varieties = [...new Set<any>(productWebserviceCatalog.flatMap((entry) => entry.varieties))].sort((a, b) => a.localeCompare(b, 'es'))
+  const varieties = speciesFilter === 'all'
+    ? []
+    : [...new Set<any>(productWebserviceCatalog.filter((entry) => entry.species === speciesFilter).flatMap((entry) => entry.varieties))].sort((a, b) => a.localeCompare(b, 'es'))
   const presentations = [...new Set<any>(productWebserviceCatalog.flatMap((entry) => entry.presentations))].sort((a, b) => a.localeCompare(b, 'es'))
   return (
     <>
-      <label><span>Grupo</span><select value={groupFilter} onChange={(event) => { setGroupFilter(event.target.value); setSpeciesFilter('all') }}><option value="all">Todos</option>{groups.map((value) => <option key={value}>{value}</option>)}</select></label>
-      <label><span>Especie</span><select value={speciesFilter} onChange={(event) => setSpeciesFilter(event.target.value)}><option value="all">Todas</option>{species.map((value) => <option key={value}>{value}</option>)}</select></label>
+      <label><span>Grupo</span><select value={groupFilter} onChange={(event) => { setGroupFilter(event.target.value); setSpeciesFilter('all'); setVarietyFilter('all') }}><option value="all">Todos</option>{groups.map((value) => <option key={value}>{value}</option>)}</select></label>
+      <label><span>Especie</span><select value={speciesFilter} onChange={(event) => { setSpeciesFilter(event.target.value); setVarietyFilter('all') }}><option value="all">Todas</option>{species.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label><span>Rango de precio</span><select value={priceFilter} onChange={(event) => setPriceFilter(event.target.value)}><option value="all">Todos</option><option value="under50">Menos de $50</option><option value="50to100">De $50 a $100</option><option value="over100">Más de $100</option><option value="noPrice">Sin precio</option></select></label>
-      <label><span>Variedad</span><select value={varietyFilter} onChange={(event) => setVarietyFilter(event.target.value)}><option value="all">Todas</option>{varieties.map((value) => <option key={value}>{value}</option>)}</select></label>
+      <label><span>Variedad</span><select value={varietyFilter} onChange={(event) => setVarietyFilter(event.target.value)} disabled={speciesFilter === 'all'}><option value="all">{speciesFilter === 'all' ? 'Elegí una especie' : 'Todas'}</option>{varieties.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label><span>Presentación</span><select value={presentationFilter} onChange={(event) => setPresentationFilter(event.target.value)}><option value="all">Todas</option>{presentations.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label><span>Calibre</span><select value={calibreFilter} onChange={(event) => setCalibreFilter(event.target.value)}><option value="all">Todos</option>{calibreCatalog.map((entry) => <option value={entry.code} key={entry.code}>{entry.name} · {entry.code}</option>)}</select></label>
       <label><span>Categoría</span><select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="all">Todas</option>{categoryCatalog.map((entry) => <option value={entry.code} key={entry.code}>{entry.description} · {entry.code}</option>)}</select></label>
