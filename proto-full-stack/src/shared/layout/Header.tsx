@@ -1,47 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
-  CalendarDays,
-  Camera,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  Clock,
-  Eye,
-  EyeOff,
-  FileSpreadsheet,
-  Image as ImageIcon,
-  ImagePlus,
-  KeyRound,
-  MapPin,
-  Menu,
-  MessageCircle,
-  Pencil,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Star,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { roleNavigation, type MenuItem, type UserRole } from '../auth/access'
 
 type HeaderProps = {
-  view?: any
-  onNavigate?: any
-  isAuthenticated?: any
-  onLogout?: any
+  view: string
+  currentPath: string
+  onNavigate: (view: string, path?: string) => void
+  role: UserRole | null
+  onLogout: () => void
 }
 
-export default function Header({ view, onNavigate, isAuthenticated, onLogout }: HeaderProps) {
-  const [menuOpen, setMenuOpen] = useState<any>(false)
-  const [desktopMenuOpen, setDesktopMenuOpen] = useState<any>(false)
+export default function Header({ view, currentPath, onNavigate, role, onLogout }: HeaderProps) {
+  const isAuthenticated = role !== null
+  const menuGroup = roleNavigation[role ?? 'public']
+  const [menuOpen, setMenuOpen] = useState(false)
+  const mobileMenuTrigger = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!menuOpen) return undefined
+    if (!menuOpen) return
     const scrollPosition = window.scrollY
     const previousStyles = {
       overflow: document.body.style.overflow,
@@ -49,11 +24,22 @@ export default function Header({ view, onNavigate, isAuthenticated, onLogout }: 
       top: document.body.style.top,
       width: document.body.style.width,
     }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setMenuOpen(false)
+      mobileMenuTrigger.current?.focus()
+    }
+    const desktopViewport = window.matchMedia('(min-width: 721px)')
+    const closeOnDesktop = () => { if (desktopViewport.matches) setMenuOpen(false) }
+    desktopViewport.addEventListener('change', closeOnDesktop)
+    window.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     document.body.style.position = 'fixed'
     document.body.style.top = `-${scrollPosition}px`
     document.body.style.width = '100%'
     return () => {
+      desktopViewport.removeEventListener('change', closeOnDesktop)
+      window.removeEventListener('keydown', handleKeyDown)
       Object.assign(document.body.style, previousStyles)
       const previousScrollBehavior = document.documentElement.style.scrollBehavior
       document.documentElement.style.scrollBehavior = 'auto'
@@ -70,60 +56,39 @@ export default function Header({ view, onNavigate, isAuthenticated, onLogout }: 
     }, 0)
   }
 
-  const openSmartList = () => {
-    setMenuOpen(false)
-    window.setTimeout(() => {
-      onNavigate('board', '/lista-inteligente')
-      window.setTimeout(() => document.getElementById('inteligente')?.scrollIntoView({ behavior: 'smooth' }), 0)
-    }, 0)
-  }
+  const openMenuItem = (item: MenuItem) => navigateFromMenu(item.view, item.path)
+  const isActive = (item: MenuItem) => item.view === 'board'
+    ? currentPath === (item.path ?? '/')
+    : view === item.view
 
   const handleAccount = () => {
     setMenuOpen(false)
     if (isAuthenticated) onLogout()
-    else onNavigate('login')
-  }
-
-  const prototypeGroups = [
-    { title: 'Cliente', items: [{ label: 'Pizarrón', view: 'board' }, { label: 'Lista inteligente', view: 'board', smart: true }, { label: 'Operadores', view: 'operators' }, { label: 'Detalles de un operador', view: 'provider', path: '/operadores/granja-san-jose' }] },
-    { title: 'Operador', items: [{ label: 'Mi mercado', view: 'provider' }, { label: 'Pizarrón de productores', view: 'producerBoard' }, { label: 'Lista de productores', view: 'producers' }, { label: 'Detalles de un productor', view: 'producerDetail' }, { label: 'Programar vacaciones', view: 'vacations' }, { label: 'Vista de operador ausente', view: 'absentProvider' }] },
-    { title: 'Productor', items: [{ label: 'Mi mercado', view: 'producerMarket' }] },
-    { title: 'Administrador', items: [{ label: 'Operadores', view: 'adminOperators' }, { label: 'Productores', view: 'adminProducers' }, { label: 'Lista inteligente', view: 'adminSmartList' }, { label: 'Recuperación de cuentas', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }] },
-    { title: 'Seguridad', items: [{ label: 'Ingresar', view: 'login' }, { label: 'Ingresar con 2FA', view: 'twoFactorChallenge' }, { label: 'Configurar 2FA', view: 'twoFactorSetup' }, { label: 'Recuperar contraseña', view: 'recovery' }, { label: 'Restablecer contraseña', view: 'resetPassword' }] },
-  ]
-  const openPrototypeItem = (item) => {
-    setDesktopMenuOpen(false)
-    if (item.smart) openSmartList()
-    else navigateFromMenu(item.view, item.path)
+    else navigateFromMenu('login')
   }
 
   return (
     <>
       <header className="site-header">
-        <button className="brand brand-button" type="button" onClick={() => navigateFromMenu('board')} aria-label="Mercado Hoy, inicio">
+        <button className="brand brand-button" type="button" onClick={() => openMenuItem(menuGroup.items[0])} aria-label="Mercado Hoy, inicio">
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
           <span><strong>Mercado</strong><small>HOY · UAM</small></span>
         </button>
         <nav className="desktop-nav" aria-label="Navegación principal">
-          <button className={view === 'board' ? 'nav-link active' : 'nav-link'} type="button" onClick={() => onNavigate('board')}>Pizarrón</button>
-          <a href="/lista-inteligente" onClick={(event) => { event.preventDefault(); onNavigate('board', '/lista-inteligente'); window.setTimeout(() => document.getElementById('inteligente')?.scrollIntoView({ behavior: 'smooth' }), 0) }}>Lista inteligente</a>
-          <button className={desktopMenuOpen ? 'prototype-menu-trigger active' : 'prototype-menu-trigger'} type="button" onClick={() => setDesktopMenuOpen((value) => !value)} aria-expanded={desktopMenuOpen} aria-controls="desktop-prototype-menu" aria-label={desktopMenuOpen ? 'Cerrar menú de pantallas' : 'Abrir menú de pantallas'}><Menu size={20} /></button>
-          <button className="quiet" type="button" onClick={handleAccount}>{isAuthenticated ? 'Salir' : 'Ingresar'}</button>
+          {menuGroup.items.map((item) => <button className={isActive(item) ? 'nav-link active' : 'nav-link'} type="button" key={item.label} aria-current={isActive(item) ? 'page' : undefined} onClick={() => openMenuItem(item)}>{item.label}</button>)}
+          <button className={view === 'login' ? 'nav-link active' : 'nav-link'} type="button" aria-current={view === 'login' ? 'page' : undefined} onClick={handleAccount}>{isAuthenticated ? 'Salir' : 'Ingresar'}</button>
         </nav>
-        <button className={menuOpen ? 'mobile-menu-toggle open' : 'mobile-menu-toggle'} type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}>
+        <button ref={mobileMenuTrigger} className={menuOpen ? 'mobile-menu-toggle open' : 'mobile-menu-toggle'} type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}>
           <span /><span /><span />
         </button>
       </header>
-      <div className={desktopMenuOpen ? 'desktop-prototype-backdrop open' : 'desktop-prototype-backdrop'} onMouseDown={(event) => event.target === event.currentTarget && setDesktopMenuOpen(false)} aria-hidden={!desktopMenuOpen} inert={!desktopMenuOpen}>
-        <nav className="desktop-prototype-menu" id="desktop-prototype-menu" aria-label="Pantallas del prototipo">
-          {prototypeGroups.map((group) => <section key={group.title}><h2>{group.title}</h2><div>{group.items.map((item) => <button className={view === item.view ? 'active' : ''} type="button" key={`${group.title}-${item.label}`} onClick={() => openPrototypeItem(item)}>{item.label}</button>)}</div></section>)}
-        </nav>
-      </div>
       <div className={menuOpen ? 'mobile-menu-backdrop open' : 'mobile-menu-backdrop'} onMouseDown={(event) => event.target === event.currentTarget && setMenuOpen(false)} aria-hidden={!menuOpen} inert={!menuOpen}>
         <nav className="mobile-menu" id="mobile-menu" aria-label="Navegación móvil">
-          <h2>Pantallas del prototipo</h2>
-          {prototypeGroups.map((group) => <section key={group.title}><p className="mobile-menu-group-title">{group.title}</p><div className="mobile-menu-sections">{group.items.map((item) => <button className={view === item.view ? 'active' : ''} type="button" key={`${group.title}-${item.label}`} onClick={() => openPrototypeItem(item)}>{item.label}</button>)}</div></section>)}
-          {isAuthenticated && <button className="mobile-menu-session" type="button" onClick={handleAccount}>Cerrar sesión</button>}
+          <h2>Menú principal</h2>
+          <section><p className="mobile-menu-group-title">{menuGroup.title}</p><div className="mobile-menu-sections">
+            {menuGroup.items.map((item) => <button className={isActive(item) ? 'active' : ''} type="button" key={item.label} aria-current={isActive(item) ? 'page' : undefined} onClick={() => openMenuItem(item)}>{item.label}</button>)}
+          </div></section>
+          <button className="mobile-menu-session" type="button" onClick={handleAccount}>{isAuthenticated ? 'Cerrar sesión' : 'Ingresar'}</button>
         </nav>
       </div>
     </>

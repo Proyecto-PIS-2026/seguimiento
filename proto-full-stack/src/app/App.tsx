@@ -61,12 +61,15 @@ import OperationNotification from '../shared/feedback/OperationNotification'
 import { OPERATION_NOTIFICATION_EVENT, type OperationNotificationDetail } from '../shared/feedback/operationNotifications'
 import { saveActorRecord } from '../lib/api/client'
 import { getRouteDocumentTitle } from '../lib/metadata/routeTitles'
+import { getAccessiblePath, getHomePath, type UserRole } from '../shared/auth/access'
+import { login, logout } from '../lib/api/session'
 
 type AppProps = {
   initialPath: string
+  initialRole: UserRole | null
 }
 
-export default function App({ initialPath }: AppProps) {
+export default function App({ initialPath, initialRole }: AppProps) {
   const initialRoute = useMemo(() => resolveRoute(initialPath), [initialPath])
   const [view, setView] = useState<any>(initialRoute.view)
   const [currentPath, setCurrentPath] = useState(initialPath)
@@ -75,7 +78,8 @@ export default function App({ initialPath }: AppProps) {
   const [productPage, setProductPage] = useState<any>(initialRoute.productPage ?? null)
   const [providerMarket, setProviderMarket] = useState<any>(initialRoute.providerMarket ?? null)
   const [publicationDrawer, setPublicationDrawer] = useState<any>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState<any>(false)
+  const [role, setRole] = useState<UserRole | null>(initialRole)
+  const roleRef = useRef(role)
   const [catalogProductIds, setCatalogProductIds] = useState<any>(products.map((product) => product.id))
   const [customCatalogItems, setCustomCatalogItems] = useState<any>([])
   const [catalogOverrides, setCatalogOverrides] = useState<any>({})
@@ -113,6 +117,11 @@ export default function App({ initialPath }: AppProps) {
   }
 
   const applyRoute = (route) => {
+    const accessiblePath = getAccessiblePath(window.location.pathname, roleRef.current)
+    if (accessiblePath !== window.location.pathname) {
+      window.history.replaceState({}, '', accessiblePath)
+      route = resolveRoute(accessiblePath)
+    }
     showNavigationLoader()
     setCurrentPath(window.location.pathname)
     setEntityDrawerStack([])
@@ -158,8 +167,33 @@ export default function App({ initialPath }: AppProps) {
   }, [])
 
   const navigate = (nextView, path = staticViewRoutes[nextView] ?? '/') => {
+    path = getAccessiblePath(path, roleRef.current)
     window.history.pushState({ view: nextView }, '', path)
     applyRoute(resolveRoute(path))
+  }
+
+  const changeSession = (nextRole: UserRole | null) => {
+    roleRef.current = nextRole
+    setRole(nextRole)
+    setCatalogProductIds(products.map((product) => product.id))
+    setCustomCatalogItems([])
+    setCatalogOverrides({})
+    setAdminEditor(null)
+    setDeleteTarget(null)
+    setSmartEditor(null)
+    setOperationNotifications([])
+    const path = getHomePath(nextRole)
+    window.history.replaceState({}, '', path)
+    applyRoute(resolveRoute(path))
+  }
+
+  const handleLogin = async (username: string, password: string) => changeSession(await login(username, password))
+  const handleLogout = async () => {
+    try { await logout(); changeSession(null) }
+    catch (cause) {
+      notificationSequence.current += 1
+      setOperationNotifications((current) => [...current, { id: notificationSequence.current, type: 'error', message: cause instanceof Error ? cause.message : 'No se pudo cerrar la sesión.' }])
+    }
   }
 
   const usesDesktopPages = () => window.matchMedia('(min-width: 761px)').matches
@@ -229,7 +263,7 @@ export default function App({ initialPath }: AppProps) {
 
   return (
     <div className="app-shell">
-      <Header view={view} onNavigate={navigate} isAuthenticated={isAuthenticated} onLogout={() => { setIsAuthenticated(false); navigate('board') }} />
+      <Header key={role ?? 'public'} view={view} currentPath={currentPath} onNavigate={navigate} role={role} onLogout={handleLogout} />
       <LinearNavigationLoader active={isNavigating} />
       <div className="operation-notification-stack" aria-live="polite">
         {operationNotifications.map((notification) => <OperationNotification key={notification.id} type={notification.type} message={notification.message} onDismiss={() => setOperationNotifications((current) => current.filter((item) => item.id !== notification.id))} />)}
@@ -237,8 +271,8 @@ export default function App({ initialPath }: AppProps) {
       {view === 'board' && <Board onOpenProduct={openProductDrawer} />}
       {view === 'producerBoard' && <Board producerMode onOpenProduct={openProductDrawer} />}
       {view === 'publish' && <Publish onDone={() => navigate('board')} />}
-      {view === 'login' && <Login onLogin={() => { setIsAuthenticated(true); navigate('publish') }} onRecover={() => navigate('recovery')} />}
-      {view === 'twoFactorChallenge' && <TwoFactorChallenge onComplete={() => { setIsAuthenticated(true); navigate('publish') }} onBack={() => navigate('login')} />}
+      {view === 'login' && <Login onLogin={handleLogin} onRecover={() => navigate('recovery')} />}
+      {view === 'twoFactorChallenge' && <TwoFactorChallenge onComplete={() => navigate('login')} onBack={() => navigate('login')} />}
       {view === 'twoFactorSetup' && <TwoFactorSetup onComplete={() => navigate('board')} />}
       {view === 'recovery' && <PasswordRecovery onBack={() => navigate('login')} />}
       {view === 'resetPassword' && <ResetPasswordPage onComplete={() => navigate('login')} />}
