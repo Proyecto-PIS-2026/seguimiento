@@ -62,14 +62,15 @@ import { OPERATION_NOTIFICATION_EVENT, type OperationNotificationDetail } from '
 import { saveActorRecord } from '../lib/api/client'
 import { getRouteDocumentTitle } from '../lib/metadata/routeTitles'
 import { getAccessiblePath, getHomePath, type UserRole } from '../shared/auth/access'
-import { login, logout } from '../lib/api/session'
+import { login, logout, type AuthSession } from '../lib/api/session'
 
 type AppProps = {
   initialPath: string
   initialRole: UserRole | null
+  initialUsername: string | null
 }
 
-export default function App({ initialPath, initialRole }: AppProps) {
+export default function App({ initialPath, initialRole, initialUsername }: AppProps) {
   const initialRoute = useMemo(() => resolveRoute(initialPath), [initialPath])
   const [view, setView] = useState<any>(initialRoute.view)
   const [currentPath, setCurrentPath] = useState(initialPath)
@@ -79,6 +80,7 @@ export default function App({ initialPath, initialRole }: AppProps) {
   const [providerMarket, setProviderMarket] = useState<any>(initialRoute.providerMarket ?? null)
   const [publicationDrawer, setPublicationDrawer] = useState<any>(null)
   const [role, setRole] = useState<UserRole | null>(initialRole)
+  const [username, setUsername] = useState(initialUsername)
   const roleRef = useRef(role)
   const [catalogProductIds, setCatalogProductIds] = useState<any>(products.map((product) => product.id))
   const [customCatalogItems, setCustomCatalogItems] = useState<any>([])
@@ -172,9 +174,11 @@ export default function App({ initialPath, initialRole }: AppProps) {
     applyRoute(resolveRoute(path))
   }
 
-  const changeSession = (nextRole: UserRole | null) => {
+  const changeSession = (nextSession: AuthSession | null) => {
+    const nextRole = nextSession?.role ?? null
     roleRef.current = nextRole
     setRole(nextRole)
+    setUsername(nextSession?.username ?? null)
     setCatalogProductIds(products.map((product) => product.id))
     setCustomCatalogItems([])
     setCatalogOverrides({})
@@ -263,7 +267,7 @@ export default function App({ initialPath, initialRole }: AppProps) {
 
   return (
     <div className="app-shell">
-      <Header key={role ?? 'public'} view={view} currentPath={currentPath} onNavigate={navigate} role={role} onLogout={handleLogout} />
+      <Header key={role ?? 'public'} view={view} currentPath={currentPath} onNavigate={navigate} role={role} username={username} onLogout={handleLogout} />
       <LinearNavigationLoader active={isNavigating} />
       <div className="operation-notification-stack" aria-live="polite">
         {operationNotifications.map((notification) => <OperationNotification key={notification.id} type={notification.type} message={notification.message} onDismiss={() => setOperationNotifications((current) => current.filter((item) => item.id !== notification.id))} />)}

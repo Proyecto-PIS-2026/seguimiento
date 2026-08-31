@@ -141,6 +141,8 @@ input[type="time"] { font-family: var(--font-family-numeric); font-variant-numer
 .desktop-nav button.quiet { background: transparent; color: var(--ink); border: 1px solid #bbbdb7; }
 .desktop-nav button.nav-link { min-height: auto; padding: 0; background: transparent; color: var(--color-text-secondary); text-transform: none; letter-spacing: 0; font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); }
 .desktop-nav button.nav-link:hover, .desktop-nav button.nav-link.active { color: var(--green); }
+.active-user { max-width: 150px; min-height: 34px; padding: 0 12px; overflow: hidden; display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-control); background: #f4f7f1; color: var(--green-dark); font-size: var(--font-size-xs); font-weight: var(--font-weight-black); line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.active-user::before { content: 'Usuario'; margin-right: 7px; color: var(--color-text-subtle); font-weight: var(--font-weight-extrabold); text-transform: uppercase; }
 .mobile-menu-toggle, .mobile-menu-backdrop { display: none; }
 
 .hero { min-height: 520px; display: grid; grid-template-columns: 1.06fr .94fr; border-bottom: 1px solid var(--line); }
@@ -739,6 +741,8 @@ h1 em { color: var(--green); font-style: normal; }
   .mobile-menu { width: 100%; padding: 30px 22px 26px; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: var(--paper); box-shadow: var(--shadow-floating); opacity: 0; transform: translateY(-18px); transition: opacity .2s ease, transform .25s ease; }
   .mobile-menu-backdrop.open .mobile-menu { opacity: 1; transform: translateY(0); }
   .mobile-menu h2 { margin: 0 0 24px; font-size: var(--font-size-2xl); letter-spacing: -.045em; }
+  .mobile-menu-user { margin: -12px 0 18px; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+  .mobile-menu-user strong { color: var(--green-dark); }
   .mobile-menu-group-title { margin: 14px 0 5px; color: var(--color-text-subtle); font-size: var(--font-size-xs); font-weight: var(--font-weight-black); text-transform: uppercase; letter-spacing: .11em; }
   .mobile-menu-sections { padding: 12px 0; display: grid; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   .mobile-menu-sections button, .mobile-menu-session { min-height: 49px; padding: 0; border: 0; background: transparent; color: var(--color-text-secondary); font-size: var(--font-size-md); font-weight: var(--font-weight-bold); text-align: left; cursor: pointer; }

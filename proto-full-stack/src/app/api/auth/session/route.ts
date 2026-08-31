@@ -1,31 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticate, createSession, deleteSession, getSessionRole, SESSION_COOKIE, SESSION_MAX_AGE } from '../../../../server/auth'
-
-function getForwardedOrigin(request: NextRequest) {
-  const forwardedProto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim()
-  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
-  const host = forwardedHost || request.headers.get('host') || request.nextUrl.host
-  const protocol = forwardedProto || request.nextUrl.protocol.replace(':', '')
-  return `${protocol}://${host}`
-}
-
-function isSameOriginRequest(request: NextRequest) {
-  const origin = request.headers.get('origin')
-  if (!origin) return true
-  try {
-    const requestOrigins = new Set([request.nextUrl.origin, getForwardedOrigin(request)])
-    return requestOrigins.has(new URL(origin).origin)
-  } catch {
-    return false
-  }
-}
-
-function isSecureRequest(request: NextRequest) {
-  return request.nextUrl.protocol === 'https:' || request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() === 'https'
-}
+import { authenticate, createSession, deleteSession, getSession, SESSION_COOKIE, SESSION_MAX_AGE } from '../../../../server/auth'
+import { isSameOriginRequest, isSecureRequest } from '../../../../server/request'
 
 export async function GET() {
-  return NextResponse.json({ role: await getSessionRole() }, { headers: { 'Cache-Control': 'no-store' } })
+  const session = await getSession()
+  return NextResponse.json({ role: session?.role ?? null, username: session?.username ?? null }, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 export async function POST(request: NextRequest) {
@@ -38,11 +17,11 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 400 })
   }
-  const role = authenticate(credentials?.username, credentials?.password)
-  if (!role) return NextResponse.json({ error: 'Usuario o contraseña incorrectos.' }, { status: 401 })
+  const session = authenticate(credentials?.username, credentials?.password)
+  if (!session) return NextResponse.json({ error: 'Usuario o contraseña incorrectos.' }, { status: 401 })
   await deleteSession()
-  const response = NextResponse.json({ role })
-  response.cookies.set(SESSION_COOKIE, createSession(role), {
+  const response = NextResponse.json(session)
+  response.cookies.set(SESSION_COOKIE, createSession(session), {
     httpOnly: true, sameSite: 'lax', secure: isSecureRequest(request), path: '/', maxAge: SESSION_MAX_AGE,
   })
   return response
@@ -53,7 +32,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Origen no permitido.' }, { status: 403 })
   }
   await deleteSession()
-  const response = NextResponse.json({ role: null })
+  const response = NextResponse.json({ role: null, username: null })
   response.cookies.set(SESSION_COOKIE, '', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 })
   return response
 }
