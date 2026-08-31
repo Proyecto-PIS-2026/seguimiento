@@ -141,8 +141,8 @@ input[type="time"] { font-family: var(--font-family-numeric); font-variant-numer
 .desktop-nav button.quiet { background: transparent; color: var(--ink); border: 1px solid #bbbdb7; }
 .desktop-nav button.nav-link { min-height: auto; padding: 0; background: transparent; color: var(--color-text-secondary); text-transform: none; letter-spacing: 0; font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); }
 .desktop-nav button.nav-link:hover, .desktop-nav button.nav-link.active { color: var(--green); }
-.active-user { max-width: 150px; min-height: 34px; padding: 0 12px; overflow: hidden; display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-control); background: #f4f7f1; color: var(--green-dark); font-size: var(--font-size-xs); font-weight: var(--font-weight-black); line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
-.active-user::before { content: 'Usuario'; margin-right: 7px; color: var(--color-text-subtle); font-weight: var(--font-weight-extrabold); text-transform: uppercase; }
+.active-user { max-width: 150px; overflow: hidden; color: var(--green-dark); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.active-user::before { content: none; }
 .mobile-menu-toggle, .mobile-menu-backdrop { display: none; }
 
 .hero { min-height: 520px; display: grid; grid-template-columns: 1.06fr .94fr; border-bottom: 1px solid var(--line); }
