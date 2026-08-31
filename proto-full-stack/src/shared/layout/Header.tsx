@@ -12,6 +12,7 @@ type HeaderProps = {
 export default function Header({ view, currentPath, onNavigate, role, onLogout }: HeaderProps) {
   const isAuthenticated = role !== null
   const menuGroup = roleNavigation[role ?? 'public']
+  const desktopMenuItems = role === 'admin' ? [] : menuGroup.items
   const [menuOpen, setMenuOpen] = useState(false)
   const mobileMenuTrigger = useRef<HTMLButtonElement>(null)
 
@@ -75,7 +76,7 @@ export default function Header({ view, currentPath, onNavigate, role, onLogout }
           <span><strong>Mercado</strong><small>HOY · UAM</small></span>
         </button>
         <nav className="desktop-nav" aria-label="Navegación principal">
-          {menuGroup.items.map((item) => <button className={isActive(item) ? 'nav-link active' : 'nav-link'} type="button" key={item.label} aria-current={isActive(item) ? 'page' : undefined} onClick={() => openMenuItem(item)}>{item.label}</button>)}
+          {desktopMenuItems.map((item) => <button className={isActive(item) ? 'nav-link active' : 'nav-link'} type="button" key={item.label} aria-current={isActive(item) ? 'page' : undefined} onClick={() => openMenuItem(item)}>{item.label}</button>)}
           <button className={view === 'login' ? 'nav-link active' : 'nav-link'} type="button" aria-current={view === 'login' ? 'page' : undefined} onClick={handleAccount}>{isAuthenticated ? 'Salir' : 'Ingresar'}</button>
         </nav>
         <button ref={mobileMenuTrigger} className={menuOpen ? 'mobile-menu-toggle open' : 'mobile-menu-toggle'} type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-controls="mobile-menu" aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}>
