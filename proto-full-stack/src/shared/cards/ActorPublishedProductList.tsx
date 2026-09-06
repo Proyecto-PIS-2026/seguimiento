@@ -1,5 +1,6 @@
+import { groupActorProducts } from '../catalog/groupActorProducts'
 import { Image as ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react'
-import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions } from '../../shared'
+import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions, compareProductsByCombination, sortProductCombinations } from '../../shared'
 
 type ActorPublishedProductListProps = {
   entry?: any
@@ -21,13 +22,13 @@ type ActorPublishedProductListProps = {
 
 export default function ActorPublishedProductList({ entry, role, items, displayItems, containerRef, emptyMessage, onOpenProduct, variantOverrides = {}, removedVariantKeys = [], onEditVariant, onRemoveVariant, onAddVariant, onRemoveProduct, onOpenVariantMedia, usePublishedVariantPhotos = false }: ActorPublishedProductListProps) {
   const allActorProducts = displayItems ? [] : getActorPublishedProducts(entry, role)
-  const actorProducts = displayItems ? [] : items ?? allActorProducts
+  const actorProducts = displayItems ? [] : groupActorProducts(items ?? allActorProducts)
   const normalizedItems = displayItems ?? actorProducts.map((product, index) => {
     const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
     const stableProductIndex = allActorProducts.findIndex((actorProduct) => actorProduct.id === product.id)
-    const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, stableProductIndex < 0 ? product.actorProductIndex ?? index : stableProductIndex)
+    const priceOptions = sortProductCombinations(getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, stableProductIndex < 0 ? product.actorProductIndex ?? index : stableProductIndex)
       .filter((option) => !removedVariantKeys.includes(`${product.id}:${option.key}`))
-      .map((option, optionIndex) => ({ ...option, photo: option.photo ?? (usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) }))
+      .map((option, optionIndex) => ({ ...option, photo: option.photo ?? (!product.persisted && usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) })))
 
     return {
       key: product.id,
@@ -39,6 +40,7 @@ export default function ActorPublishedProductList({ entry, role, items, displayI
       rows: priceOptions.map((option) => ({
         key: option.key,
         label: `${option.variety} · Cat. ${option.category} · ${option.calibre} · ${option.unit}`,
+        attributes: [option.variety, `Cat. ${option.category}`, option.presentation, option.calibre, option.unit],
         price: option.price,
         photo: option.photo,
         photoLabel: `Ver foto de ${option.variety}`,
@@ -58,7 +60,7 @@ export default function ActorPublishedProductList({ entry, role, items, displayI
             {item.actions && <span className="actor-product-heading-actions">{item.actions}</span>}
           </span>
           <span className="actor-product-price-list">{item.rows.map((row) => <span key={row.key}>
-            <small>{row.label}</small>
+            <small className="actor-variant-attributes" aria-label={row.label}>{(row.attributes ?? [row.label]).map((attribute, attributeIndex) => <span key={`${attribute}-${attributeIndex}`}>{attribute}</span>)}</small>
             <span className="actor-variant-price">
               {row.photo && row.onOpenPhoto && <button className="variant-photo-action" type="button" onClick={(event) => { event.stopPropagation(); row.onOpenPhoto() }} aria-label={row.photoLabel}><ImageIcon size={13} /></button>}
               <b>{row.price}</b>

@@ -47,15 +47,19 @@ export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminE
   const [whatsapp, setWhatsapp] = useState<any>(item?.whatsapp ?? '')
   const [legalName, setLegalName] = useState<any>(item?.legalName ?? '')
   const [address, setAddress] = useState<any>(item?.address ?? item?.place ?? '')
-  const [resetSent, setResetSent] = useState<any>(false)
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const [formError, setFormError] = useState('')
   const [active, setActive] = useState<any>(item?.active !== false)
   const { confirm, isSubmitting } = useConfirmationTransition()
   const title = `${item ? 'Modificar' : 'Agregar'} ${kind === 'producer' ? 'productor' : 'operador'}`
   const submit = (event) => {
     event.preventDefault()
+    if (password !== confirmation) { setFormError('Las contraseñas no coinciden.'); return }
+    setFormError('')
     const place = kind === 'operator' ? `${nave} · Puesto ${puesto}` : address
     confirm(
-      () => onSave({ ...item, id: item?.id ?? Date.now(), name, place, nave, puesto, email, responsible, whatsapp, legalName, address, active }),
+      () => onSave({ ...item, id: item?.id, name, place, nave, puesto, email, responsible, whatsapp, legalName, address, active, ...(password ? { password } : {}) }),
       { success: `${kind === 'producer' ? 'Productor' : 'Operador'} ${item ? 'actualizado' : 'creado'} correctamente.` },
     )
   }
@@ -75,7 +79,12 @@ export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminE
               <label className="field wide"><span>Dirección física</span><input value={address} onChange={(event) => setAddress(event.target.value)} required /></label>
             </>
           </div>
-          {item && <div className="password-reset-control"><div><b>Contraseña de acceso</b><span>{resetSent ? `Contraseña borrada. Enviamos un enlace a ${email}.` : 'El usuario recibirá por email un enlace de un solo uso.'}</span></div><button type="button" onClick={() => setResetSent(true)} disabled={resetSent}><KeyRound size={17} />{resetSent ? 'Email enviado' : 'Resetear contraseña'}</button></div>}
+          <p>{item ? (item.hasPassword === false ? 'Esta cuenta todavía no tiene contraseña. Definí una para habilitar el acceso.' : 'Dejá la contraseña vacía para conservar la actual.') : 'El email será el usuario para iniciar sesión.'}</p>
+          <div className="field-grid">
+            <label className="field"><span>{item ? 'Nueva contraseña' : 'Contraseña'}</span><input type="password" autoComplete="new-password" minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} required={!item || item.hasPassword === false} /></label>
+            <label className="field"><span>Repetir contraseña</span><input type="password" autoComplete="new-password" minLength={8} maxLength={128} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required={!item || !!password || item.hasPassword === false} /></label>
+          </div>
+          {formError && <p className="field-error" role="alert">{formError}</p>}
           <div className="availability-control"><div><b>Registro activo</b><span>Permite utilizar este registro en el sistema.</span></div><button className={active ? 'switch on' : 'switch'} type="button" onClick={() => setActive((value) => !value)} aria-pressed={active}><i /></button></div>
           <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Guardando…' : 'Guardar'} <Check size={20} /></button>
         </form>

@@ -51,7 +51,7 @@ export default function Login({ onLogin, onRecover }: LoginProps) {
           <p className="eyebrow"><span /> Acceso a Mercado Hoy</p>
           <h1>Bienvenido<br /><em>de nuevo.</em></h1>
           <p className="login-intro">Ingresá con tu cuenta de operador, productor o administrador.</p>
-          <button className="google-signin" type="button" onClick={() => setError('El acceso con Google no está configurado en este prototipo. Usá tu usuario y contraseña.')}><GoogleIcon />Iniciar con Google</button>
+          <p className="privacy-note">El acceso con Google todavía no está habilitado.</p>
           <div className="login-separator"><span>o ingresá con usuario</span></div>
           <form onSubmit={async (event) => {
             event.preventDefault()
@@ -62,8 +62,8 @@ export default function Login({ onLogin, onRecover }: LoginProps) {
             catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo iniciar sesión. Intentá nuevamente.') }
             finally { setIsSubmitting(false) }
           }}>
-            <label className="field"><span>Usuario</span><input type="text" name="username" autoComplete="username" autoFocus placeholder="Tu usuario" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
-            <label className="field"><span>Contraseña</span><div className="password-input"><input type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password" placeholder="Tu contraseña" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}<span>{showPassword ? 'Ocultar' : 'Ver'}</span></button></div></label>
+            <label className="field"><span>Email o usuario</span><input type="text" name="username" autoComplete="username" autoFocus placeholder="Email de tu cuenta" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
+            <label className="field"><span>Contraseña</span><div className="password-input"><input type={showPassword ? 'text' : 'password'} name="password" aria-label="Contraseña" autoComplete="current-password" placeholder="Tu contraseña" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}<span>{showPassword ? 'Ocultar' : 'Ver'}</span></button></div></label>
             {error && <p className="field-error" role="alert">{error}</p>}
             <button className="help-link" type="button" onClick={onRecover}>¿Necesitás ayuda para ingresar?</button>
             <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Ingresando…' : 'Ingresar'} <ArrowRight size={20} /></button>

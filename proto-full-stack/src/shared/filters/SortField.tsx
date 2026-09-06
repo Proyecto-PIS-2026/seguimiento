@@ -33,8 +33,9 @@ type SortFieldProps = {
   value?: any
   onChange?: any
   options?: any
+  className?: any
 }
 
-export default function SortField({ value, onChange, options }: SortFieldProps) {
-  return <label><span>Ordenar por</span><select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
+export default function SortField({ value, onChange, options, className = '' }: SortFieldProps) {
+  return <label className={className}><span>Ordenar por</span><select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
 }

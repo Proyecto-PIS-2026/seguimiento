@@ -59,18 +59,18 @@ export default function ProductPanel({ product, onClose, onOpenProvider, onOpenP
   const [currentPage, setCurrentPage] = useState<any>(1)
   const operatorListRef = useRef(null)
 
-  const actors = (actorRole === 'producer' ? producerDirectory : product.operators).filter((operator) => operator.available !== false)
+  const actors = (product.persisted ? product.operators : actorRole === 'producer' ? producerDirectory : product.operators).filter((operator) => operator.available !== false)
   const actorPlural = actorRole === 'producer' ? 'Productores' : 'Operadores'
   const actorSingular = actorRole === 'producer' ? 'productor' : 'operador'
   const naves = useMemo(() => [...new Set<any>(actors.map((operator) => operator.place.split(' · ')[0]))], [actors])
   const visibleOperators = useMemo(() => {
     const term = operatorQuery.trim().toLocaleLowerCase('es')
     return actors.map((operator, index) => {
-      const offerPhoto = operator.photo !== undefined ? operator.photo : (index % 3 === 0 ? null : product.image)
+      const offerPhoto = product.persisted ? operator.priceOptions?.find(option => option.photo)?.photo ?? null : operator.photo !== undefined ? operator.photo : (index % 3 === 0 ? null : product.image)
       return {
         ...operator,
         offerPhoto,
-        priceOptions: getOperatorPriceOptions(product, operator, index).map((option, optionIndex) => ({ ...option, photo: offerPhoto && ((index * 2 + optionIndex) % 3 === 1) ? offerPhoto : null })),
+        priceOptions: getOperatorPriceOptions(product, operator, index).map((option, optionIndex) => ({ ...option, photo: product.persisted ? option.photo : offerPhoto && ((index * 2 + optionIndex) % 3 === 1) ? offerPhoto : null })),
       }
     })
       .filter((operator) => !term || operator.name.toLocaleLowerCase('es').includes(term))
@@ -90,6 +90,7 @@ export default function ProductPanel({ product, onClose, onOpenProvider, onOpenP
   }, [actors, operatorQuery, operatorSort, product, selectedCalibre, selectedCategory, selectedNave, selectedPresentation, selectedUnit, selectedVariety])
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleOperators.length / pageSize))
+  useEffect(() => setCurrentPage((page) => Math.min(page, pageCount)), [pageCount])
   const paginatedOperators = visibleOperators.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   useEffect(() => setCurrentPage(1), [operatorQuery, operatorSort, selectedCalibre, selectedCategory, selectedNave, selectedPresentation, selectedUnit, selectedVariety])
@@ -122,7 +123,7 @@ export default function ProductPanel({ product, onClose, onOpenProvider, onOpenP
         subtitle: operator.place,
         ariaLabel: `Abrir mercado de ${operator.name}`,
         onOpen: () => onOpenProvider(operator, product, actorRole),
-        actions: <><button type="button" onClick={(event) => event.stopPropagation()} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button><a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a></>,
+        actions: <><button type="button" onClick={(event) => { event.stopPropagation(); window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${operator.place}, UAM, Uruguay`)}`, '_blank', 'noopener,noreferrer') }} aria-label={`Ver ubicación de ${operator.name}`}><MapPin size={15} /></button><a href={`https://wa.me/${operator.whatsapp?.replace(/\D/g, '').replace(/^0/, '598') ?? ''}?text=${encodeURIComponent(`Hola, consulto por ${product.name} en ${operator.name}`)}`} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} aria-label={`Contactar a ${operator.name} por WhatsApp`}><MessageCircle size={15} /></a></>,
         rows: operator.priceOptions.map((option) => ({ key: option.key, label: `${option.label} · ${option.unit}`, price: option.price, photo: option.photo, photoLabel: `Ver foto de ${option.label}`, onOpenPhoto: option.photo ? () => setMediaPreview({ src: option.photo, alt: `${option.label} de ${operator.name}` }) : null })),
       }))}
     />

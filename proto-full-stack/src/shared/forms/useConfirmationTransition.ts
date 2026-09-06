@@ -24,7 +24,7 @@ export default function useConfirmationTransition(delay = 650) {
       Promise.resolve()
         .then(action)
         .then(() => showOperationNotification('success', feedback.success ?? 'Los cambios se guardaron correctamente.'))
-        .catch(() => showOperationNotification('error', feedback.error ?? 'Ocurrió un error al guardar los cambios. Intentá nuevamente.'))
+        .catch((error) => showOperationNotification('error', feedback.error ?? (error instanceof Error ? error.message : 'Ocurrió un error al guardar los cambios. Intentá nuevamente.')))
         .finally(() => setIsSubmitting(false))
     }, delay)
   }

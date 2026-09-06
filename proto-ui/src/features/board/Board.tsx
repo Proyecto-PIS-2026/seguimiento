@@ -39,11 +39,14 @@ import BoardProductCard from '../../shared/cards/BoardProductCard'
 type BoardProps = {
   onOpenProduct?: any
   producerMode?: any
+  items?: any[]
+  smartItems?: any[]
 }
 
-export default function Board({ onOpenProduct, producerMode = false }: BoardProps) {
+export default function Board({ onOpenProduct, producerMode = false, items = products, smartItems }: BoardProps) {
   const [query, setQuery] = useState<any>('')
-  const [favorites, setFavorites] = useState<any>([1, 2])
+  const [favorites, setFavorites] = useState<any>([])
+  useEffect(() => { try { const value=JSON.parse(localStorage.getItem('uam-favorites') ?? '[]'); if(Array.isArray(value))setFavorites(value) } catch {} }, [])
   const [activeFilter, setActiveFilter] = useState<any>('Todos')
   const [currentPage, setCurrentPage] = useState<any>(1)
   const [groupFilter, setGroupFilter] = useState<any>('all')
@@ -61,7 +64,7 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
 
   const visibleProducts = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('es')
-    let result = term ? products.filter((product) => product.name.toLocaleLowerCase('es').includes(term)) : products
+    let result = term ? items.filter((product) => product.name.toLocaleLowerCase('es').includes(term)) : items
     if (activeFilter === 'Favoritos') result = result.filter((product) => favorites.includes(product.id))
     return result.filter((product) => productMatchesFilters(product, { groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter })).sort((a, b) => {
       const favoriteDifference = Number(favorites.includes(b.id)) - Number(favorites.includes(a.id))
@@ -70,7 +73,7 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
       if (sortBy === 'priceDesc') return (Number(b.price.match(/\d+/)?.[0]) || -1) - (Number(a.price.match(/\d+/)?.[0]) || -1)
       return a.name.localeCompare(b.name, 'es')
     })
-  }, [activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, query, sortBy, speciesFilter, unitFilter, varietyFilter])
+  }, [items, activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, query, sortBy, speciesFilter, unitFilter, varietyFilter])
 
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleProducts.length / pageSize))
@@ -81,20 +84,20 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
   const activeFilterCount = [groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter].filter((value) => value !== 'all').length
 
   const toggleFavorite = (id) => {
-    setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+    setFavorites((current) => { const next=current.includes(id)?current.filter((item)=>item!==id):[...current,id]; try{localStorage.setItem('uam-favorites',JSON.stringify(next))}catch{} return next })
   }
 
   return (
     <main id="top">
       <section className="hero" id="pizarron">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Actualizado hoy, 08:45</p>
+          <p className="eyebrow"><span /> Publicaciones del mercado</p>
           <h1>{producerMode ? <>Oferta de<br /><em>productores.</em></> : <>El mercado,<br /><em>más claro.</em></>}</h1>
           <p className="hero-description">{producerMode ? 'Mercadería publicada por productores para los operadores de la UAM.' : 'Precios y mercadería disponible hoy en la Unidad Agroalimentaria Metropolitana.'}</p>
         </div>
         <div className="hero-visual" aria-hidden="true">
           <img src="https://images.unsplash.com/photo-1619153422227-08d462800327?auto=format&fit=crop&w=1200&q=88" alt="" />
-          <div className="hero-note"><b>147</b><span>productos publicados<br />hoy</span></div>
+          <div className="hero-note"><b>{items.length}</b><span>productos publicados<br />hoy</span></div>
         </div>
       </section>
 
@@ -112,7 +115,7 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
                 <button className={activeFilter === filter ? 'active' : ''} type="button" key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>
               ))}
             </div>
-            <span className="market-count">147 precios actualizados hoy</span>
+            <span className="market-count">{items.length} productos publicados</span>
           </div>
 
           <ListFilterToolbar query={query} setQuery={setQuery} placeholder="Buscar fruta u hortaliza" searchLabel="Buscar un producto" activeFilterCount={activeFilterCount} onClear={() => { setGroupFilter('all'); setSpeciesFilter('all'); setPriceFilter('all'); setVarietyFilter('all'); setPresentationFilter('all'); setCalibreFilter('all'); setCategoryFilter('all'); setNaveFilter('all'); setUnitFilter('all'); setSortBy('name') }}>
@@ -138,10 +141,10 @@ export default function Board({ onOpenProduct, producerMode = false }: BoardProp
         <div>
           <p className="eyebrow light-eyebrow">Elegí mejor esta semana</p>
           <h2>La lista<br /><em>inteligente.</em></h2>
-          <p>Nueve frutas y hortalizas recomendadas por su abundancia, precio y calidad.</p>
+          <p>Frutas y hortalizas recomendadas por su abundancia, precio y calidad.</p>
           <a href="https://uam.com.uy/boletin-de-precios-mayoristas/#informes" target="_blank" rel="noreferrer">Ver informe semanal <ArrowUpRight size={18} aria-hidden="true" /></a>
         </div>
-        <SmartProductList onOpenProduct={onOpenProduct} />
+        <SmartProductList items={smartItems} onOpenProduct={onOpenProduct} />
       </section>}
     </main>
   )

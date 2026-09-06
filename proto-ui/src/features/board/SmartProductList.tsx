@@ -33,11 +33,12 @@ import SmartListItem from '../../shared/cards/SmartListItem'
 
 type SmartProductListProps = {
   onOpenProduct?: any
+  items?: any[]
 }
 
-export default function SmartProductList({ onOpenProduct }: SmartProductListProps) {
+export default function SmartProductList({ onOpenProduct, items }: SmartProductListProps) {
   const [query, setQuery] = useState<any>('')
-  const recommendedProducts = smartPicks.map((pick) => ({ ...products.find((product) => product.id === pick.productId), description: pick.description }))
+  const recommendedProducts = items ? items.map(item=>({...item.product,description:item.description})) : smartPicks.map((pick) => ({ ...products.find((product) => product.id === pick.productId), description: pick.description }))
   const visibleProducts = recommendedProducts.filter((product) => !query.trim() || product.name.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es')))
 
   return (

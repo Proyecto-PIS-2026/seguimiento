@@ -1,5 +1,3 @@
-import { NextResponse } from 'next/server'
-
-export function GET() {
-  return NextResponse.json({ status: 'ok', application: 'mercado-hoy-proto-full-stack' })
-}
+import { respond } from '../../../server/http'
+import { getDatabase } from '../../../server/database'
+export async function GET(){return respond(async()=>{await getDatabase().query('SELECT 1');return {status:'ok',database:'ok',application:'mercado-hoy-proto-full-stack'}})}

@@ -41,6 +41,9 @@ type PublicationPanelProps = {
   onSave?: any
 }
 
+const optionCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' })
+const compareText = (a, b) => optionCollator.compare(String(a ?? ''), String(b ?? ''))
+
 export default function PublicationPanel({ items, initialProduct, initialVariant, onClose, onSave }: PublicationPanelProps) {
   const initialDefinition = initialProduct ? productWebserviceCatalog.find((entry) => entry.id === (initialProduct.sourceProductId ?? initialProduct.id)) : null
   const initialCombination = initialVariant ?? (initialProduct ? getProductCombination(initialProduct) : null)
@@ -52,7 +55,9 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
   const [calibre, setCalibre] = useState<any>(initialCombination?.calibre ?? initialDefinition?.calibres[0].code ?? '')
   const [category, setCategory] = useState<any>(initialCombination?.category ?? initialDefinition?.categories[0].code ?? '')
   const [photo, setPhoto] = useState<any>(initialVariant?.photo ?? '')
-  const [price, setPrice] = useState<any>(initialVariant?.price?.match(/\d+/)?.[0] ?? '')
+  const [price, setPrice] = useState<any>(initialVariant?.price?.match(/\d+(?:\.\d+)?/)?.[0] ?? '')
+  const [noPrice, setNoPrice] = useState<any>(Boolean(initialVariant?.price && !initialVariant.price.match(/\d+/)))
+  const [formError, setFormError] = useState<any>('')
   const { confirm, isSubmitting } = useConfirmationTransition()
 
   const selectedDefinition = productWebserviceCatalog.find((definition) => definition.id === Number(productId))
@@ -64,29 +69,40 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
   useEffect(() => {
     if (initialVariant || !matchedProduct || loadedProductId.current === matchedProduct.id) return
     loadedProductId.current = matchedProduct.id
-    setPrice(matchedProduct.price.match(/\d+/)?.[0] ?? '')
+    const matchedPrice = matchedProduct.price.match(/\d+(?:\.\d+)?/)?.[0] ?? ''
+    setPrice(matchedPrice)
+    setNoPrice(!matchedPrice)
     setPhoto(matchedProduct.image ?? '')
   }, [initialVariant, matchedProduct])
 
   const selectProduct = (nextProductId) => {
     const definition = productWebserviceCatalog.find((entry) => entry.id === Number(nextProductId))
     setProductId(nextProductId)
-    setVariety(definition?.varieties[0] ?? '')
-    setUnit(definition?.units[0].code ?? '')
-    setPresentation(definition?.presentations[0] ?? '')
-    setCalibre(definition?.calibres[0].code ?? '')
+    setVariety(definition?.varieties.slice().sort(compareText)[0] ?? '')
+    setUnit(definition?.units.slice().sort((a, b) => compareText(a.name, b.name) || compareText(a.code, b.code))[0]?.code ?? '')
+    setPresentation(definition?.presentations.slice().sort(compareText)[0] ?? '')
+    setCalibre(definition?.calibres.slice().sort((a, b) => compareText(a.name, b.name) || compareText(a.code, b.code))[0]?.code ?? '')
     setCategory(definition?.categories.find((entry) => entry.code === 'I')?.code ?? definition?.categories[0].code ?? '')
     setPhoto('')
     setPrice('')
+    setNoPrice(false)
+    setFormError('')
     loadedProductId.current = null
   }
   const changeCombination = (setter, value) => {
     setter(value)
-    setPhoto('')
-    setPrice('')
+    setFormError('')
     loadedProductId.current = null
   }
-  const draftProduct = buildPricedProduct({ definition: selectedDefinition, baseProduct: matchedProduct ?? undefined, variety, unit, presentation, calibre, category, photo, price })
+  const draftProduct = buildPricedProduct({ definition: selectedDefinition, baseProduct: matchedProduct ?? (initialVariant ? initialProduct : undefined), variety, unit, presentation, calibre, category, photo, price, noPrice })
+  const submitPublication = () => {
+    if (!draftProduct || !Number.isFinite(Number(price)) || Number(price) <= 0) {
+      setFormError('Completá la combinación y un precio mayor que cero.')
+      return
+    }
+    setFormError('')
+    confirm(() => onSave(matchedProduct, draftProduct), { success: `${initialVariant || matchedProduct ? 'Combinación actualizada' : 'Combinación publicada'} correctamente.` })
+  }
 
   return (
     <DrawerShell onClose={onClose} labelledBy="publication-panel-title" className="publication-panel">
@@ -97,10 +113,11 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
           <h2 id="publication-panel-title">{initialVariant ? `Editar combinación de ${initialProduct.name}` : initialProduct ? `Agregar combinación de ${initialProduct.name}` : 'Agregar publicación'}</h2>
           <span>Seleccioná las características de la mercadería.</span>
         </header>
-        <form className="publication-panel-content" onSubmit={(event) => { event.preventDefault(); confirm(() => onSave(matchedProduct, draftProduct), { success: `${initialVariant || matchedProduct ? 'Combinación actualizada' : 'Combinación publicada'} correctamente.` }) }}>
-          <ProductPriceFields productId={productId} onProductChange={selectProduct} lockProduct={Boolean(initialProduct)} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
+        <form className="publication-panel-content" noValidate onSubmit={(event) => { event.preventDefault(); submitPublication() }}>
+          <ProductPriceFields productId={productId} onProductChange={selectProduct} lockProduct={Boolean(initialProduct)} variety={variety} setVariety={(value) => changeCombination(setVariety, value)} unit={unit} setUnit={(value) => changeCombination(setUnit, value)} presentation={presentation} setPresentation={(value) => changeCombination(setPresentation, value)} calibre={calibre} setCalibre={(value) => changeCombination(setCalibre, value)} category={category} setCategory={(value) => changeCombination(setCategory, value)} photo={photo} setPhoto={(value) => { setPhoto(value); setFormError('') }} price={price} setPrice={(value) => { setPrice(value); setFormError('') }} noPrice={noPrice} setNoPrice={(value) => { setNoPrice(value); if (value) setPrice(''); setFormError('') }} />
           {matchedProduct && <div className="existing-publication"><Check size={18} /><span><strong>Combinación ya publicada</strong><small>Cargamos sus datos actuales para que puedas editarlos.</small></span></div>}
-          <button className="primary-submit" type="submit" disabled={!draftProduct || isSubmitting}>{isSubmitting ? 'Confirmando…' : initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar combinación'} <ArrowRight size={20} /></button>
+          {formError && <p className="field-error" role="alert">{formError}</p>}
+          <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Confirmando…' : initialVariant || matchedProduct ? 'Guardar cambios' : 'Publicar combinación'} <ArrowRight size={20} /></button>
         </form>
       </>}
     </DrawerShell>

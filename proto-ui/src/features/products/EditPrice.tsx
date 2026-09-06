@@ -47,8 +47,8 @@ export default function EditPrice({ product, onSave, onCancel }: EditPriceProps)
   const [calibre, setCalibre] = useState<any>(initialCombination.calibre)
   const [category, setCategory] = useState<any>(initialCombination.category)
   const [photo, setPhoto] = useState<any>(product.image ?? '')
-  const [price, setPrice] = useState<any>(product.price.match(/\d+/)?.[0] ?? '')
-  const [available, setAvailable] = useState<any>(true)
+  const [price, setPrice] = useState<any>(product.price.match(/\d+(?:\.\d+)?/)?.[0] ?? '')
+  const [available, setAvailable] = useState<any>(product.available !== false)
   const { confirm, isSubmitting } = useConfirmationTransition()
   const updatedProduct = buildPricedProduct({ definition, baseProduct: product, variety, unit, presentation, calibre, category, photo, price })
 
@@ -61,7 +61,7 @@ export default function EditPrice({ product, onSave, onCancel }: EditPriceProps)
       </aside>
       <section className="form-content">
         <div className="form-title"><div><h2>Editar precio</h2><p>La actualización se refleja en el catálogo de hoy.</p></div></div>
-        <form onSubmit={(event) => { event.preventDefault(); if (updatedProduct) confirm(() => onSave(updatedProduct), { success: 'Precio actualizado correctamente.' }) }}>
+        <form onSubmit={(event) => { event.preventDefault(); if (updatedProduct) confirm(() => onSave({ ...updatedProduct, available }), { success: 'Precio actualizado correctamente.' }) }}>
           <div className="edit-product-summary"><img src={product.image} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} /><div><strong>{product.name}</strong><span>{product.detail}</span></div></div>
           <ProductPriceFields productId={String(definition.id)} onProductChange={() => { }} lockProduct variety={variety} setVariety={setVariety} unit={unit} setUnit={setUnit} presentation={presentation} setPresentation={setPresentation} calibre={calibre} setCalibre={setCalibre} category={category} setCategory={setCategory} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
           <div className="availability-control"><div><b>Publicado hoy</b><span>Define si la publicación aparece en tu mercado.</span></div><button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button></div>

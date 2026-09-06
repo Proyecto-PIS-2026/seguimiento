@@ -1,14 +1,12 @@
-type ActorKind = 'operator' | 'producer'
-
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '')
-
-export async function saveActorRecord<T extends Record<string, unknown>>(kind: ActorKind, actor: T): Promise<T> {
-  const response = await fetch(`${apiBaseUrl ?? ''}/api/${kind === 'operator' ? 'operators' : 'producers'}`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(actor),
-  })
-  if (!response.ok) throw new Error(`No se pudo guardar el ${kind === 'operator' ? 'operador' : 'productor'}.`)
-  return response.json() as Promise<T>
+export class ApiError extends Error { constructor(message: string, public status: number) { super(message) } }
+export async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`/api/${path}`, { ...options, credentials: 'include', cache: 'no-store', headers: { 'Content-Type':'application/json', ...options.headers } })
+  const result = await response.json().catch(()=>null)
+  if(!response.ok) throw new ApiError(result?.error ?? 'No se pudo completar la operación.',response.status)
+  return result as T
 }
+export async function saveActorRecord(kind: 'operator'|'producer', actor: Record<string,unknown>) {
+  const path=kind==='operator'?'operators':'producers'
+  return api(`${path}${actor.id?`/${actor.id}`:''}`,{method:actor.id?'PATCH':'POST',body:JSON.stringify(actor)})
+}
+export async function listOperatorRecords(signal?:AbortSignal){return (await api('operators',{signal})).items}

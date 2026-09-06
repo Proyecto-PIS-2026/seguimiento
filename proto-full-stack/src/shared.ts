@@ -140,7 +140,7 @@ export const producerDirectory = [
 
 export const slugify = (value) => value.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-export const formatShortDate = (value) => new Intl.DateTimeFormat('es-UY', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`))
+export const formatShortDate = (value) => !value || Number.isNaN(Date.parse(value)) ? 'Sin definir' : new Intl.DateTimeFormat('es-UY', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`))
 
 export const allOperators = Array.from(new Map(products.flatMap((product) => product.operators.map((operator) => [operator.name, { ...operator, product, productCount: products.length }]))).values())
 
@@ -248,6 +248,8 @@ export function productMatchesFilters(product, { groupFilter, speciesFilter, pri
 }
 
 export function getActorPublishedProducts(entry, role) {
+  if (entry?.publishedProducts) return entry.publishedProducts
+  if (entry?.id) return []
   const directlyPublished = role === 'producer' ? [entry.product] : products.filter((product) => product.operators.some((operator) => operator.name === entry.name))
   return [...new Map([...directlyPublished, ...products].filter(Boolean).map((product) => [product.id, product])).values()].slice(0, Math.min(6, entry.productCount ?? 6))
 }
@@ -289,7 +291,35 @@ export function getProductCombination(product) {
   return { variety: definition.variety, unit: definition.units[0].code, presentation: definition.presentations[0], calibre: definition.calibres[0].code, category: definition.categories.find((entry) => entry.code === 'I')?.code ?? definition.categories[0].code, ...(product.combination ?? {}) }
 }
 
+const combinationCollator = new Intl.Collator('es', { numeric: true, sensitivity: 'base' })
+
+function compareCombinationField(a, b) {
+  return combinationCollator.compare(String(a ?? ''), String(b ?? ''))
+}
+
+export function compareProductCombinations(a, b) {
+  return compareCombinationField(a?.variety, b?.variety)
+    || compareCombinationField(a?.category, b?.category)
+    || compareCombinationField(a?.presentation, b?.presentation)
+    || compareCombinationField(a?.calibre, b?.calibre)
+    || compareCombinationField(a?.unit, b?.unit)
+}
+
+export function compareProductsByCombination(a, b) {
+  return compareProductCombinations(getProductCombination(a), getProductCombination(b))
+    || a.name.localeCompare(b.name, 'es')
+    || Number(a.id ?? 0) - Number(b.id ?? 0)
+}
+
+export function sortProductCombinations(combinations) {
+  return combinations
+    .map((entry, index) => ({ entry, index }))
+    .sort((a, b) => compareProductCombinations(a.entry, b.entry) || a.index - b.index)
+    .map(({ entry }) => entry)
+}
+
 export function getOperatorPriceOptions(product, operator, operatorIndex = 0) {
+  if (operator.priceOptions) return sortProductCombinations(operator.priceOptions)
   if (!operator.available) return []
   const definition = productWebserviceCatalog.find((entry) => entry.id === (product.sourceProductId ?? product.id))
   const combination = getProductCombination(product)
@@ -305,7 +335,7 @@ export function getOperatorPriceOptions(product, operator, operatorIndex = 0) {
       category: definition.categories[(operatorIndex + 1) % definition.categories.length].code,
     })
   }
-  return combinations.map((entry, index) => {
+  return sortProductCombinations(combinations).map((entry, index) => {
     const calibre = definition.calibres.find((value) => value.code === entry.calibre)
     const unit = measureUnits.find((value) => value.code === entry.unit)
     const productLabel = entry.variety === 'Estándar' ? definition.species : entry.variety
@@ -322,12 +352,14 @@ export function getOperatorPriceOptions(product, operator, operatorIndex = 0) {
 }
 
 export function getActorProductPriceOptions(product, actor, productIndex = 0) {
+  if (product.publicationItems) return product.publicationItems.flatMap(item => getActorProductPriceOptions(item, actor, productIndex))
+  if (product.persisted) return [{ ...product.combination, key: String(product.id), publicationId: product.id, price: product.price, photo: product.photo ?? null }]
   const definition = productWebserviceCatalog.find((entry) => entry.id === (product.sourceProductId ?? product.id))
   if (!definition) return []
   const seed = [...`${actor.name ?? 'actor'}-${product.id}-${productIndex}`].reduce((total, character) => total + character.charCodeAt(0), 0)
   const optionCount = 2 + (seed % 6)
   const basePrice = Number(actor.price?.match(/\d+/)?.[0] ?? product.price.match(/\d+/)?.[0] ?? 0)
-  return Array.from({ length: optionCount }, (_, index) => {
+  return sortProductCombinations(Array.from({ length: optionCount }, (_, index) => {
     const variety = definition.varieties[(seed + index) % definition.varieties.length]
     const unit = definition.units[(seed + index * 2) % definition.units.length]
     const presentation = definition.presentations[(seed + index) % definition.presentations.length]
@@ -343,11 +375,11 @@ export function getActorProductPriceOptions(product, actor, productIndex = 0) {
       price: `$${basePrice + index * 4}`,
       photo: ((product.id * 7 + index * 3) % 5 < 2) ? actor.photo ?? product.image : null,
     }
-  })
+  }))
 }
 
-export function buildPricedProduct({ definition, baseProduct, variety, unit, presentation, calibre, category, photo, price }) {
-  if (!definition || !variety || !unit || !presentation || !calibre || !category || !price) return null
+export function buildPricedProduct({ definition, baseProduct, variety, unit, presentation, calibre, category, photo, price, noPrice = false }) {
+  if (!definition || !variety || !unit || !presentation || !calibre || !category || (!noPrice && !price)) return null
   const selectedUnit = measureUnits.find((entry) => entry.code === unit)
   const selectedCalibre = definition.calibres.find((entry) => entry.code === calibre)
   return {
@@ -359,8 +391,9 @@ export function buildPricedProduct({ definition, baseProduct, variety, unit, pre
     detail: `${presentation} · ${selectedCalibre?.name ?? calibre} · Categoría ${category}`,
     unitType: selectedUnit?.value ?? 'unidad',
     unit: `/ ${selectedUnit?.name ?? 'unidad'}`,
+    photo: photo || null,
     image: photo || baseProduct?.image || definition.product.image,
-    price: `$${price}`,
+    price: noPrice ? 'Sin precio' : `$${price}`,
     combination: { variety, unit, presentation, calibre, category },
   }
 }

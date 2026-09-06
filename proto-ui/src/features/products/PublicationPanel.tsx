@@ -52,7 +52,7 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
   const [calibre, setCalibre] = useState<any>(initialCombination?.calibre ?? initialDefinition?.calibres[0].code ?? '')
   const [category, setCategory] = useState<any>(initialCombination?.category ?? initialDefinition?.categories[0].code ?? '')
   const [photo, setPhoto] = useState<any>(initialVariant?.photo ?? '')
-  const [price, setPrice] = useState<any>(initialVariant?.price?.match(/\d+/)?.[0] ?? '')
+  const [price, setPrice] = useState<any>(initialVariant?.price?.match(/\d+(?:\.\d+)?/)?.[0] ?? '')
   const { confirm, isSubmitting } = useConfirmationTransition()
 
   const selectedDefinition = productWebserviceCatalog.find((definition) => definition.id === Number(productId))
@@ -64,7 +64,7 @@ export default function PublicationPanel({ items, initialProduct, initialVariant
   useEffect(() => {
     if (initialVariant || !matchedProduct || loadedProductId.current === matchedProduct.id) return
     loadedProductId.current = matchedProduct.id
-    setPrice(matchedProduct.price.match(/\d+/)?.[0] ?? '')
+    setPrice(matchedProduct.price.match(/\d+(?:\.\d+)?/)?.[0] ?? '')
     setPhoto(matchedProduct.image ?? '')
   }, [initialVariant, matchedProduct])
 

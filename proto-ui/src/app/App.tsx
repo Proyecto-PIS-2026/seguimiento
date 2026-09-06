@@ -239,6 +239,7 @@ export default function App() {
   const catalogItems = [...products.filter((product) => catalogProductIds.includes(product.id)), ...customCatalogItems].map((product) => ({ ...product, ...(catalogOverrides[product.id] ?? {}) }))
   const renderCatalog = (returnView, role = 'operator') => <ProviderMarket operator={role === 'producer' ? producerDirectory[0] : products[0].operators[0]} originProduct={role === 'producer' ? producerDirectory[0].product : products[0]} eyebrow={role === 'producer' ? 'Mi mercadería' : 'Mi mercado'} items={catalogItems} editable productRole={role} onCreate={(product) => setPublicationDrawer({ role, returnView, product })} onRemove={(productId) => { setCatalogProductIds((current) => current.filter((id) => id !== productId)); setCustomCatalogItems((current) => current.filter((product) => product.id !== productId)) }} onOpenProduct={(product) => openProductDrawer(product, role)} />
   const saveAdminItem = (kind, item) => {
+    item = { ...item, id: item.id ?? Date.now() }
     const update = (current) => current.some((entry) => entry.id === item.id) ? current.map((entry) => entry.id === item.id ? item : entry) : [...current, item]
     if (kind === 'operator') setAdminOperators(update)
     else if (kind === 'producer') setAdminProducers(update)

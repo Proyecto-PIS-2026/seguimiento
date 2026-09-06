@@ -62,6 +62,7 @@ export default function ActorDirectory({ eyebrow, title, description, entries, o
   }, [entries, filterValue, getFilterValue, query, sortBy])
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleEntries.length / pageSize))
+  useEffect(() => setCurrentPage((page) => Math.min(page, pageCount)), [pageCount])
   const paginatedEntries = visibleEntries.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   useEffect(() => setCurrentPage(1), [filterValue, query, sortBy])
@@ -82,7 +83,7 @@ export default function ActorDirectory({ eyebrow, title, description, entries, o
       </ListFilterToolbar>
       <div className={isPageChanging ? 'directory-list page-changing' : 'directory-list'} ref={listRef}>
         {paginatedEntries.map((entry) => (
-          <ActorDirectoryListItem key={`${entry.name}-${entry.place}-${entry.product?.id ?? entry.productCount}`} title={entry.name} subtitle={entry.place} meta={`${entry.productCount} productos`} highlightSubtitle={highlightPlace} onOpen={() => onOpen(entry)} actions={(showLocationAction || showWhatsapp) ? <>{showLocationAction && <button type="button" aria-label={`Ver ubicación de ${entry.name}`}><MapPin size={15} /></button>}{showWhatsapp && <a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer" aria-label={`Contactar a ${entry.name} por WhatsApp`}><MessageCircle size={15} /></a>}</> : null} />
+          <ActorDirectoryListItem key={`${entry.name}-${entry.place}-${entry.product?.id ?? entry.productCount}`} title={entry.name} subtitle={entry.place} meta={`${entry.productCount} productos`} highlightSubtitle={highlightPlace} onOpen={() => onOpen(entry)} actions={(showLocationAction || showWhatsapp) ? <>{showLocationAction && <button type="button" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${entry.place}, UAM, Uruguay`)}`, '_blank', 'noopener,noreferrer')} aria-label={`Ver ubicación de ${entry.name}`}><MapPin size={15} /></button>}{showWhatsapp && entry.whatsapp && <a href={`https://wa.me/${entry.whatsapp?.replace(/\D/g, '').replace(/^0/, '598') ?? ''}?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer" aria-label={`Contactar a ${entry.name} por WhatsApp`}><MessageCircle size={15} /></a>}</> : null} />
         ))}
       </div>
       {visibleEntries.length === 0 && <div className="catalog-empty"><h2>No hay resultados</h2></div>}

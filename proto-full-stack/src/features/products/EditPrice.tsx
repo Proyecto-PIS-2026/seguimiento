@@ -47,10 +47,20 @@ export default function EditPrice({ product, onSave, onCancel }: EditPriceProps)
   const [calibre, setCalibre] = useState<any>(initialCombination.calibre)
   const [category, setCategory] = useState<any>(initialCombination.category)
   const [photo, setPhoto] = useState<any>(product.image ?? '')
-  const [price, setPrice] = useState<any>(product.price.match(/\d+/)?.[0] ?? '')
-  const [available, setAvailable] = useState<any>(true)
+  const [price, setPrice] = useState<any>(product.price.match(/\d+(?:\.\d+)?/)?.[0] ?? '')
+  const [noPrice, setNoPrice] = useState<any>(!product.price.match(/\d+/))
+  const [formError, setFormError] = useState<any>('')
+  const [available, setAvailable] = useState<any>(product.available !== false)
   const { confirm, isSubmitting } = useConfirmationTransition()
-  const updatedProduct = buildPricedProduct({ definition, baseProduct: product, variety, unit, presentation, calibre, category, photo, price })
+  const updatedProduct = buildPricedProduct({ definition, baseProduct: product, variety, unit, presentation, calibre, category, photo, price, noPrice })
+  const submitUpdate = () => {
+    if (!updatedProduct || !Number.isFinite(Number(price)) || Number(price) <= 0) {
+      setFormError('Completá la combinación y un precio mayor que cero.')
+      return
+    }
+    setFormError('')
+    confirm(() => onSave({ ...updatedProduct, available }), { success: 'Precio actualizado correctamente.' })
+  }
 
   return (
     <main className="form-page edit-price-page">
@@ -61,11 +71,12 @@ export default function EditPrice({ product, onSave, onCancel }: EditPriceProps)
       </aside>
       <section className="form-content">
         <div className="form-title"><div><h2>Editar precio</h2><p>La actualización se refleja en el catálogo de hoy.</p></div></div>
-        <form onSubmit={(event) => { event.preventDefault(); if (updatedProduct) confirm(() => onSave(updatedProduct), { success: 'Precio actualizado correctamente.' }) }}>
+        <form noValidate onSubmit={(event) => { event.preventDefault(); submitUpdate() }}>
           <div className="edit-product-summary"><img src={product.image} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = fallbackProductImage }} /><div><strong>{product.name}</strong><span>{product.detail}</span></div></div>
-          <ProductPriceFields productId={String(definition.id)} onProductChange={() => { }} lockProduct variety={variety} setVariety={setVariety} unit={unit} setUnit={setUnit} presentation={presentation} setPresentation={setPresentation} calibre={calibre} setCalibre={setCalibre} category={category} setCategory={setCategory} photo={photo} setPhoto={setPhoto} price={price} setPrice={setPrice} />
+          <ProductPriceFields productId={String(definition.id)} onProductChange={() => { }} lockProduct variety={variety} setVariety={(value) => { setVariety(value); setFormError('') }} unit={unit} setUnit={(value) => { setUnit(value); setFormError('') }} presentation={presentation} setPresentation={(value) => { setPresentation(value); setFormError('') }} calibre={calibre} setCalibre={(value) => { setCalibre(value); setFormError('') }} category={category} setCategory={(value) => { setCategory(value); setFormError('') }} photo={photo} setPhoto={(value) => { setPhoto(value); setFormError('') }} price={price} setPrice={(value) => { setPrice(value); setFormError('') }} noPrice={noPrice} setNoPrice={(value) => { setNoPrice(value); if (value) setPrice(''); setFormError('') }} />
           <div className="availability-control"><div><b>Publicado hoy</b><span>Define si la publicación aparece en tu mercado.</span></div><button className={available ? 'switch on' : 'switch'} type="button" onClick={() => setAvailable((value) => !value)} aria-pressed={available}><i /></button></div>
-          <button className="primary-submit" type="submit" disabled={!updatedProduct || isSubmitting}>{isSubmitting ? 'Guardando…' : 'Guardar precio'} <Check size={20} /></button>
+          {formError && <p className="field-error" role="alert">{formError}</p>}
+          <button className="primary-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Guardando…' : 'Guardar precio'} <Check size={20} /></button>
           <button className="text-action" type="button" onClick={onCancel}>Cancelar</button>
         </form>
       </section>

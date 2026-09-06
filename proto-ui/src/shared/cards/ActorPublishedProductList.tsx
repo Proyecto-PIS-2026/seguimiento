@@ -1,3 +1,4 @@
+import { groupActorProducts } from '../catalog/groupActorProducts'
 import { Image as ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react'
 import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions } from '../../shared'
 
@@ -21,13 +22,13 @@ type ActorPublishedProductListProps = {
 
 export default function ActorPublishedProductList({ entry, role, items, displayItems, containerRef, emptyMessage, onOpenProduct, variantOverrides = {}, removedVariantKeys = [], onEditVariant, onRemoveVariant, onAddVariant, onRemoveProduct, onOpenVariantMedia, usePublishedVariantPhotos = false }: ActorPublishedProductListProps) {
   const allActorProducts = displayItems ? [] : getActorPublishedProducts(entry, role)
-  const actorProducts = displayItems ? [] : items ?? allActorProducts
+  const actorProducts = displayItems ? [] : groupActorProducts(items ?? allActorProducts)
   const normalizedItems = displayItems ?? actorProducts.map((product, index) => {
     const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
     const stableProductIndex = allActorProducts.findIndex((actorProduct) => actorProduct.id === product.id)
     const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, stableProductIndex < 0 ? product.actorProductIndex ?? index : stableProductIndex)
       .filter((option) => !removedVariantKeys.includes(`${product.id}:${option.key}`))
-      .map((option, optionIndex) => ({ ...option, photo: option.photo ?? (usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) }))
+      .map((option, optionIndex) => ({ ...option, photo: option.photo ?? (!product.persisted && usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) }))
 
     return {
       key: product.id,

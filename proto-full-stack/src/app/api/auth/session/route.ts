@@ -4,7 +4,7 @@ import { isSameOriginRequest, isSecureRequest } from '../../../../server/request
 
 export async function GET() {
   const session = await getSession()
-  return NextResponse.json({ role: session?.role ?? null, username: session?.username ?? null }, { headers: { 'Cache-Control': 'no-store' } })
+  return NextResponse.json(session ?? { role: null, username: null }, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 export async function POST(request: NextRequest) {
@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Credenciales inválidas.' }, { status: 400 })
   }
-  const session = authenticate(credentials?.username, credentials?.password)
+  const session = await authenticate(credentials?.username, credentials?.password)
   if (!session) return NextResponse.json({ error: 'Usuario o contraseña incorrectos.' }, { status: 401 })
   await deleteSession()
   const response = NextResponse.json(session)
-  response.cookies.set(SESSION_COOKIE, createSession(session), {
+  response.cookies.set(SESSION_COOKIE, await createSession(session), {
     httpOnly: true, sameSite: 'lax', secure: isSecureRequest(request), path: '/', maxAge: SESSION_MAX_AGE,
   })
   return response

@@ -50,6 +50,7 @@ export default function RecoveryRequestsPage({ items, onResolve }: RecoveryReque
   const visibleItems = items.filter((item) => (!query.trim() || `${item.name} ${item.email} ${item.problem}`.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))) && (status === 'Todas' || item.status === status)).sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name, 'es') : b.id - a.id)
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleItems.length / pageSize))
+  useEffect(() => setCurrentPage((page) => Math.min(page, pageCount)), [pageCount])
   const paginated = visibleItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   useEffect(() => setCurrentPage(1), [query, sortBy, status])
   return (

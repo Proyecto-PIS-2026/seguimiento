@@ -1,13 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { listActors, saveActor } from '../../../server/prototypeStore'
-import { getSessionRole } from '../../../server/auth'
-
-export function GET() {
-  return NextResponse.json({ items: listActors('operator') })
-}
-
-export async function POST(request: NextRequest) {
-  const role = await getSessionRole()
-  if (role !== 'admin') return NextResponse.json({ error: 'Acceso no autorizado.' }, { status: role ? 403 : 401 })
-  return NextResponse.json(saveActor('operator', await request.json()), { status: 201 })
-}
+import { NextRequest } from 'next/server'
+import { listActors, saveActor } from '../../../server/actors'
+import { respond, requireSession, jsonBody } from '../../../server/http'
+export async function GET() { return respond(async () => { await requireSession(['admin']); return { items: await listActors('operator') } }) }
+export async function POST(request: NextRequest) { return respond(async () => { await requireSession(['admin']); return saveActor('operator', await jsonBody(request)) }, 201) }

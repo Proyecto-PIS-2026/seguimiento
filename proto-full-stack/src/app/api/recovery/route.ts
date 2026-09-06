@@ -1,0 +1,6 @@
+import { NextRequest } from 'next/server'
+import { respond,requireSession,jsonBody,requiredText,HttpError } from '../../../server/http'
+import { getDatabase } from '../../../server/database'
+export async function GET(){return respond(async()=>{await requireSession(['admin']);return {items:(await getDatabase().query('SELECT id,name,email,problem,status FROM recovery_requests ORDER BY id DESC')).rows.map(x=>({...x,id:Number(x.id)}))}})}
+export async function POST(request:NextRequest){return respond(async()=>{const data=await jsonBody(request);const email=requiredText(data.email,'Email').toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new HttpError(400,'Email inválido.');const name=requiredText(data.name||email,'Nombre');const problem=requiredText(data.problem||'Necesito restablecer mi contraseña.','Consulta',2000);await getDatabase().query('INSERT INTO recovery_requests(name,email,problem) VALUES($1,$2,$3)',[name,email,problem]);return {received:true}},201)}
+export async function PATCH(request:NextRequest){return respond(async()=>{await requireSession(['admin']);const data=await jsonBody(request);const id=Number(data.id);if(!Number.isSafeInteger(id)||id<1)throw new HttpError(400,'Solicitud inválida.');await getDatabase().query("UPDATE recovery_requests SET status='Resuelta' WHERE id=$1",[id]);return {resolved:true}})}

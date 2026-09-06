@@ -56,10 +56,11 @@ export default function ActorPanel({ entry, role, onClose, onOpenPage, onOpenPro
           <p><MapPin size={16} />{entry.place}</p>
         </header>
         <div className="actor-panel-content">
-          <div className="actor-panel-facts"><span><small>Mercadería publicada</small><strong>{entry.productCount} productos</strong></span><span><small>Horario</small><strong>04:00–13:00</strong></span></div>
-          <div className="actor-panel-actions"><button type="button"><MapPin size={15} />Ubicación</button><a href={`https://wa.me/?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer"><MessageCircle size={15} />WhatsApp</a></div>
+          <div className="actor-panel-facts"><span><small>Mercadería publicada</small><strong>{entry.productCount} productos</strong></span><span><small>Horario</small><strong>{entry.schedule?.opening ?? '04:00'}–{entry.schedule?.closing ?? '13:00'}</strong></span></div>
+          {entry.available === false && <p>Operador de vacaciones: {entry.vacation?.start} al {entry.vacation?.end}.</p>}
+          <div className="actor-panel-actions"><button type="button" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${entry.place}, UAM, Uruguay`)}`, '_blank', 'noopener,noreferrer')}><MapPin size={15} />Ubicación</button><a href={`https://wa.me/${entry.whatsapp?.replace(/\D/g, '').replace(/^0/, '598') ?? ''}?text=${encodeURIComponent(`Hola, consulto por el mercado de ${entry.name}`)}`} target="_blank" rel="noreferrer"><MessageCircle size={15} />WhatsApp</a></div>
           <div className="actor-products-heading"><h3>Productos publicados</h3><span>{entry.productCount ?? actorProducts.length} productos</span></div>
-          <ActorPublishedProductList entry={entry} role={role} items={actorProducts} onOpenProduct={onOpenProduct} onOpenVariantMedia={setMediaPreview} />
+          <ActorPublishedProductList entry={entry} role={role} items={entry.available === false ? [] : actorProducts} onOpenProduct={onOpenProduct} onOpenVariantMedia={setMediaPreview} />
           <button className="actor-open-page" type="button" onClick={onOpenPage}>Ver página completa <ArrowUpRight size={17} /></button>
         </div>
       </>}

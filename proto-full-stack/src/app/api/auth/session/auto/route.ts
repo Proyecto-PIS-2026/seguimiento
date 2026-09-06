@@ -22,7 +22,7 @@ function getRedirectPath(request: NextRequest, session: SessionUser) {
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get('user')
   const password = request.nextUrl.searchParams.get('pass')
-  const session = authenticate(username, password)
+  const session = username && ['admin','operador','productor'].includes(username) ? await authenticate(username, password) : null
   await deleteSession()
 
   if (!session) {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(new URL(getRedirectPath(request, session), getForwardedOrigin(request)))
-  response.cookies.set(SESSION_COOKIE, createSession(session), {
+  response.cookies.set(SESSION_COOKIE, await createSession(session), {
     httpOnly: true, sameSite: 'lax', secure: isSecureRequest(request), path: '/', maxAge: SESSION_MAX_AGE,
   })
   return response

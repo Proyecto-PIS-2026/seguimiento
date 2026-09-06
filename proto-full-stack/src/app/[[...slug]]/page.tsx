@@ -35,6 +35,7 @@ export default async function PrototypePage({ params, searchParams }: PrototypeP
   const { slug = [] } = await params
   const query = await searchParams
   const initialPath = slug.length ? `/${slug.join('/')}` : '/'
+  if (initialPath === '/operadores/demo-operator') redirect(`/operadores/frutas-del-norte${getSearchParamsWithoutSessionControls(query)}`)
   const nextPath = `${initialPath}${getSearchParamsWithoutSessionControls(query)}`
   if (Object.hasOwn(query, 'loggedout')) {
     const logoutParams = new URLSearchParams({ next: nextPath })
@@ -50,5 +51,5 @@ export default async function PrototypePage({ params, searchParams }: PrototypeP
   const initialRole = initialSession?.role ?? null
   const accessiblePath = getAccessiblePath(initialPath, initialRole)
   if (accessiblePath !== initialPath) redirect(accessiblePath)
-  return <PrototypeApp initialPath={initialPath} initialRole={initialRole} initialUsername={initialSession?.username ?? null} />
+  return <PrototypeApp initialPath={initialPath} initialSession={initialSession} />
 }
