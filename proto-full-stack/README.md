@@ -5,29 +5,48 @@ Los componentes compartidos conservan la interfaz de `proto-ui`; esa versión si
 
 ## Desarrollo local
 
-Usar pnpm y detener el servidor antes de instalar dependencias:
+Usar Node.js 20.19 o superior y pnpm. Detener el servicio antes de instalar
+las dependencias en el directorio desplegado.
 
 ```bash
 pnpm install
 cp .env.example .env.local
-# Sólo si la base aún no existe:
-PGPASSWORD=postgres createdb -h localhost -U postgres proto-full-uam
-# Aplicar en orden; las migraciones admiten repetición:
-PGPASSWORD=postgres psql -h localhost -U postgres -d proto-full-uam -v ON_ERROR_STOP=1 -f db/migrations/001_operators.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d proto-full-uam -v ON_ERROR_STOP=1 -f db/migrations/002_workflows.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d proto-full-uam -v ON_ERROR_STOP=1 -f db/migrations/003_publication_availability.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d proto-full-uam -v ON_ERROR_STOP=1 -f db/migrations/004_demo_seed_history.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d proto-full-uam -v ON_ERROR_STOP=1 -f db/migrations/005_frutas_del_norte.sql
+# Configurar DATABASE_URL con la base PostgreSQL correspondiente.
+pnpm db:generate
+pnpm db:migrate
 pnpm seed:demo
 pnpm dev
 ```
 
-En este servidor, `proto-full-uam` ya está creada y las migraciones están aplicadas.
-`DATABASE_URL` es una variable privada del servidor. `/api/health` comprueba la conexión a la base.
-Si el puerto 3000 está ocupado, Next elige otro libre; se puede indicar `pnpm dev --port 3002`.
+Todos los accesos a datos de la aplicación, scripts y pruebas usan Prisma Client.
+`src/server/database.ts` conserva una única instancia y un pool de hasta cinco
+conexiones mediante el adaptador oficial `@prisma/adapter-pg`; no hay consultas
+mediante `pg` directamente. Los únicos SQL de ejecución son el chequeo de salud
+y los bloqueos transaccionales de PostgreSQL, invocados mediante Prisma.
 
-Si se alternaron npm y pnpm y Next dejó de resolver sus paquetes, detener el servidor,
-ejecutar `pnpm install --force`, retirar la caché generada `.next/dev` y volver a iniciar.
+El esquema está en `prisma/schema.prisma`. La migración `000_baseline` conserva
+las restricciones CHECK, los índices de email normalizado y las migraciones
+históricas de `db/migrations`. Esos archivos históricos se conservan como referencia;
+los nuevos cambios se administran con Prisma Migrate.
+
+En este servidor la base existente ya está registrada con esa migración. Para
+adoptar Prisma en **otra base existente con las cinco migraciones históricas aplicadas**,
+registrar una sola vez `pnpm exec prisma migrate resolve --applied 000_baseline`.
+Para una base vacía usar `pnpm db:migrate` directamente. No usar `db push` ni reset
+para actualizar producción. Los cambios futuros se preparan con
+`pnpm exec prisma migrate dev --name nombre` en una base de desarrollo y se aplican
+con `pnpm db:migrate`; revisar el SQL para conservar CHECK e índices de expresión,
+que Prisma no representa completamente en su esquema.
+
+`DATABASE_URL` es privada del servidor. Prisma CLI carga `.env.local` y respeta
+las variables del entorno. `/api/health` comprueba la conexión mediante Prisma.
+`pnpm build` y `pnpm dev` generan el cliente antes de iniciar Next.js.
+
+Producción en este servidor: el servicio systemd `proto-full-stack` ejecuta
+`next start` con `NODE_ENV=production` en `127.0.0.1:10001`; Nginx publica HTTPS
+por el puerto 10000. Para desplegar: detener el servicio, instalar dependencias,
+aplicar migraciones, ejecutar `pnpm build` y reiniciar el servicio. El usuario
+`proto-full-stack` necesita lectura de `.env.local`, `.next` y `node_modules`.
 
 ## Cuentas y permisos
 

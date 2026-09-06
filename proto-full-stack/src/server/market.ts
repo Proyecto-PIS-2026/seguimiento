@@ -1,7 +1,7 @@
 import { getDatabase } from './database'
 import { findActor, type ActorKind } from './actors'
 import { demoProfiles } from './demoProfiles'
-import { HttpError, requiredText } from './http'
+import { HttpError, requiredText, uuid } from './http'
 import { products, productWebserviceCatalog, buildPricedProduct } from '../shared'
 import type { SessionUser } from './auth'
 
@@ -15,8 +15,8 @@ export function publicationProduct(row: any) {
 export async function ownMarket(session: SessionUser) {
   const id = session.actorId!
   const profile = Object.values(demoProfiles).some(profile => profile.id === id && profile.role === session.role) ? demoProfiles[session.role as ActorKind] : await findActor(session.role as ActorKind, id)
-  const items = (await getDatabase().query('SELECT * FROM publications WHERE actor_id=$1 ORDER BY species_id,id', [id])).rows.map(publicationProduct).filter(Boolean)
-  const settings = (await getDatabase().query('SELECT schedule,vacation FROM market_settings WHERE actor_id=$1', [id])).rows[0]
+  const items = (await getDatabase().publications.findMany({ where: { actor_id: id }, orderBy: [{ species_id: 'asc' }, { id: 'asc' }] })).map(publicationProduct).filter(Boolean)
+  const settings = await getDatabase().market_settings.findUnique({ where: { actor_id: id } })
   return { profile, items, schedule: settings?.schedule ?? defaultSchedule, vacation: settings?.vacation ?? defaultVacation }
 }
 export async function savePublication(session: SessionUser, data: any) {
@@ -37,23 +37,28 @@ export async function savePublication(session: SessionUser, data: any) {
   if (photo && (typeof photo !== 'string' || photo.length > 2_800_000 || !/^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(photo))) throw new HttpError(400, 'La foto debe ser JPG, PNG o WebP de hasta 2 MB.')
   const active = data.available ?? true
   if (typeof active !== 'boolean') throw new HttpError(400, 'Disponibilidad inválida.')
-  let result
+  const db = getDatabase()
+  const values = { species_id: speciesId, combination: clean, price, photo, active, updated_at: new Date() }
   if (data.id !== undefined) {
     if (!Number.isSafeInteger(Number(data.id)) || Number(data.id)<1) throw new HttpError(400,'Publicación inválida.')
-    result = await getDatabase().query(`UPDATE publications SET species_id=$1,combination=$2,price=$3,photo=$4,active=$7,updated_at=now() WHERE id=$5 AND actor_id=$6 RETURNING *`, [speciesId,clean,price,photo,data.id,session.actorId,active])
-    if (!result.rowCount) throw new HttpError(404, 'La publicación no existe en tu mercado.')
-  } else result = await getDatabase().query('INSERT INTO publications(actor_id,role,species_id,combination,price,photo,active) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *', [session.actorId,session.role,speciesId,clean,price,photo,active])
-  return publicationProduct(result.rows[0])
+    return db.$transaction(async tx => {
+      const where = { id: BigInt(data.id), actor_id: session.actorId! }
+      const result = await tx.publications.updateMany({ where, data: values })
+      if (!result.count) throw new HttpError(404, 'La publicación no existe en tu mercado.')
+      return publicationProduct(await tx.publications.findFirstOrThrow({ where }))
+    })
+  }
+  return publicationProduct(await db.publications.create({ data: { ...values, actor_id: session.actorId!, role: session.role } }))
 }
+
 export async function saveSettings(session: SessionUser, data: any) {
-  const client = await getDatabase().connect()
-  try {
-    await client.query('BEGIN')
-    await client.query('INSERT INTO market_settings(actor_id) VALUES($1) ON CONFLICT DO NOTHING', [session.actorId])
+  return getDatabase().$transaction(async tx => {
+    const where = { actor_id: session.actorId! }
+    await tx.market_settings.upsert({ where, create: where, update: {} })
     if (data.schedule) {
       const { days, opening, closing } = data.schedule
       if (!Array.isArray(days) || !days.length || !days.every(x=>['mon','tue','wed','thu','fri','sat','sun'].includes(x)) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(opening) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(closing) || opening>=closing) throw new HttpError(400, 'Seleccioná días y un horario de apertura anterior al cierre.')
-      await client.query('UPDATE market_settings SET schedule=$1 WHERE actor_id=$2', [{ days:[...new Set(days)],opening,closing },session.actorId])
+      await tx.market_settings.update({ where, data: { schedule: { days:[...new Set(days)],opening,closing } } })
     }
     if (data.vacation) {
       if(session.role !== 'operator') throw new HttpError(403,'Las vacaciones corresponden a operadores.')
@@ -63,31 +68,38 @@ export async function saveSettings(session: SessionUser, data: any) {
       let replacement = null
       if(substitute?.id) {
         if(substitute.id===session.actorId) throw new HttpError(400,'Elegí otro operador como reemplazo.')
-        const found=await findActor('operator',substitute.id)
+        const found=await tx.operators.findUnique({where:{id:uuid(substitute.id)}})
         if(!found?.active) throw new HttpError(400,'El reemplazo no está activo.')
-        replacement={id:found.id,name:found.name,place:found.place}
+        replacement={id:found.id,name:found.name,place:`${found.nave} · Puesto ${found.puesto}`}
       }
       const vacation={start,end,description:start?requiredText(description,'Descripción',2000):'',substitute:replacement}
-      await client.query('UPDATE market_settings SET vacation=$1 WHERE actor_id=$2',[vacation,session.actorId])
+      await tx.market_settings.update({ where, data: { vacation } })
     }
-    await client.query('COMMIT')
     return { saved:true }
-  } catch(error){await client.query('ROLLBACK');throw error} finally{client.release()}
+  })
 }
 export async function marketSnapshot() {
   const db=getDatabase()
-  const [actorRows,pubRows,smartRows,priceRows,demoSettings]=await Promise.all([
-    db.query(`SELECT a.id::text,a.name,a.whatsapp,a.nave || ' · Puesto ' || a.puesto AS place,'operator' AS role,s.schedule,s.vacation FROM operators a LEFT JOIN market_settings s ON s.actor_id=a.id::text WHERE a.active
-      UNION ALL SELECT a.id::text,a.name,a.whatsapp,a.address AS place,'producer' AS role,s.schedule,s.vacation FROM producers a LEFT JOIN market_settings s ON s.actor_id=a.id::text WHERE a.active`),
-    db.query('SELECT * FROM publications WHERE active=true ORDER BY species_id,id'),
-    db.query('SELECT id,species_id,description FROM smart_recommendations ORDER BY id'),
-    db.query('SELECT species_id,price FROM recommended_prices'),
-    db.query('SELECT actor_id,schedule,vacation FROM market_settings WHERE actor_id = ANY($1::text[])', [Object.values(demoProfiles).map(profile => profile.id)])])
-  const actors=actorRows.rows
-  for (const role of ['operator','producer']) if(pubRows.rows.some(x=>x.actor_id===demoProfiles[role as ActorKind].id)) actors.push({...demoProfiles[role as ActorKind], ...demoSettings.rows.find(x=>x.actor_id===demoProfiles[role as ActorKind].id)})
+  const [operators,producers,pubRows,smartRows,priceRows,settings]=await Promise.all([
+    db.operators.findMany({ where: { active: true }, select: { id:true,name:true,whatsapp:true,nave:true,puesto:true } }),
+    db.producers.findMany({ where: { active: true }, select: { id:true,name:true,whatsapp:true,address:true } }),
+    db.publications.findMany({ where: { active: true }, orderBy: [{species_id:'asc'},{id:'asc'}] }),
+    db.smart_recommendations.findMany({ orderBy: {id:'asc'} }),
+    db.recommended_prices.findMany().then(rows => rows.map(row => ({ ...row, price: row.price.toFixed(2) }))),
+    db.market_settings.findMany(),
+  ])
+  const settingsFor = (id: string) => {
+    const saved = settings.find(s => s.actor_id === id)
+    return { schedule: saved?.schedule, vacation: saved?.vacation as typeof defaultVacation | undefined }
+  }
+  const actors = [
+    ...operators.map(a => ({ id:a.id,name:a.name,whatsapp:a.whatsapp,place:`${a.nave} · Puesto ${a.puesto}`,role:'operator',...settingsFor(a.id) })),
+    ...producers.map(a => ({ id:a.id,name:a.name,whatsapp:a.whatsapp,place:a.address,role:'producer',...settingsFor(a.id) })),
+  ]
+  for (const role of ['operator','producer'] as const) if(pubRows.some(x=>x.actor_id===demoProfiles[role].id)) actors.push({...demoProfiles[role], ...settingsFor(demoProfiles[role].id)})
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Montevideo'})
   const directories=actors.map(actor=>{
-    const items=pubRows.rows.filter(row=>row.actor_id===actor.id).map(publicationProduct).filter(Boolean)
+    const items=pubRows.filter(row=>row.actor_id===actor.id).map(publicationProduct).filter(Boolean)
     return {...actor,persisted:true,publishedProducts:items,productCount:new Set(items.map(item=>item.sourceProductId)).size,product:items[0]??null,available:!(actor.vacation?.start && actor.vacation.start<=today && actor.vacation.end>=today)}
   })
   const board=(role:string)=>products.map(product=>{
@@ -99,8 +111,8 @@ export async function marketSnapshot() {
     })
     if(!offers.length)return null
     const prices=offers.flatMap(actor=>actor.priceOptions.map(x=>x.numericPrice))
-    return {...product,persisted:true,operators:offers,sellers:offers.length,price:`$${Math.min(...prices).toFixed(2)}`,recommendedPrice:priceRows.rows.find(x=>x.species_id===product.id)?.price??null}
+    return {...product,persisted:true,operators:offers,sellers:offers.length,price:`$${Math.min(...prices).toFixed(2)}`,recommendedPrice:priceRows.find(x=>x.species_id===product.id)?.price??null}
   }).filter(Boolean)
   const publicBoard=board('operator')
-  return {operators:directories.filter(x=>x.role==='operator'),producers:directories.filter(x=>x.role==='producer'),products:publicBoard,producerProducts:board('producer'),smartItems:smartRows.rows.map(row=>({id:Number(row.id),description:row.description,product:{...(publicBoard.find(p=>p.id===row.species_id)??{...products.find(p=>p.id===row.species_id),price:'Sin publicaciones',persisted:true,operators:[]}),price:priceRows.rows.find(x=>x.species_id===row.species_id)?`$${Number(priceRows.rows.find(x=>x.species_id===row.species_id).price).toFixed(2)}`:(publicBoard.find(p=>p.id===row.species_id)?.price??'Sin publicaciones'),recommendedPrice:priceRows.rows.find(x=>x.species_id===row.species_id)?.price??null}}))}
+  return {operators:directories.filter(x=>x.role==='operator'),producers:directories.filter(x=>x.role==='producer'),products:publicBoard,producerProducts:board('producer'),smartItems:smartRows.map(row=>({id:Number(row.id),description:row.description,product:{...(publicBoard.find(p=>p.id===row.species_id)??{...products.find(p=>p.id===row.species_id),price:'Sin publicaciones',persisted:true,operators:[]}),price:priceRows.find(x=>x.species_id===row.species_id)?`$${Number(priceRows.find(x=>x.species_id===row.species_id)!.price).toFixed(2)}`:(publicBoard.find(p=>p.id===row.species_id)?.price??'Sin publicaciones'),recommendedPrice:priceRows.find(x=>x.species_id===row.species_id)?.price??null}}))}
 }

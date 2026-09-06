@@ -29,7 +29,7 @@ export async function respond(action: () => Promise<unknown>, status = 200) {
   try { return NextResponse.json(await action(), { status, headers: { 'Cache-Control': 'no-store' } }) }
   catch (error) {
     if (error instanceof HttpError) return NextResponse.json({ error: error.message }, { status: error.status })
-    if ((error as { code?: string })?.code === '23505') return NextResponse.json({ error: 'Ya existe un registro con ese email o combinación.' }, { status: 409 })
+    if ((error as { code?: string })?.code === 'P2002') return NextResponse.json({ error: 'Ya existe un registro con ese email o combinación.' }, { status: 409 })
     console.error('Error en API:', error instanceof Error ? error.message : 'Error desconocido')
     return NextResponse.json({ error: 'No se pudo completar la operación. Intentá nuevamente.' }, { status: 503 })
   }

@@ -1,10 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { Pool } from 'pg'
+import { getDatabase } from '../src/server/database'
 
 const base=process.env.TEST_BASE_URL??'http://localhost:3002'
-const database=new Pool({connectionString:process.env.DATABASE_URL??'postgresql://postgres:postgres@localhost:5432/proto-full-uam'})
+const database=getDatabase()
 function client(){
   let cookie=''
   return async(path:string,method='GET',body?:unknown)=>{
@@ -25,13 +25,20 @@ test('cuentas, aislamiento, publicaciones, vacaciones, recomendaciones y recuper
   let previousPrice:any
   const input={name:`Prueba ${tag}`,nave:'Nave 1',puesto:'TEST',email,responsible:'Prueba',whatsapp:'099123456',legalName:'Prueba SRL',address:'UAM',active:true,password}
   try{
+    assert.equal((await anonymous('health')).data.database,'ok')
     assert.equal((await anonymous('operators','POST',input)).status,401)
     assert.equal((await admin('auth/session','POST',{username:'admin',password:'admin'})).status,200)
     assert.equal((await admin('operators','POST',{...input,password:'short'})).status,400)
+    const concurrent = await Promise.all(['operators','producers'].map(async kind => ({
+      kind, result: await admin(kind,'POST',{...input,email:`race-${tag}@example.test`}),
+    })))
+    for (const {kind,result} of concurrent) if (result.status===201) actors.push({kind,id:result.data.id})
+    assert.deepEqual(concurrent.map(x=>x.result.status).sort(),[201,409])
     const created=await admin('operators','POST',input);assert.equal(created.status,201);actors.push({kind:'operators',id:created.data.id})
     assert.ok(created.data.hasPassword);assert.equal(created.data.password,undefined);assert.equal(created.data.password_hash,undefined)
     assert.equal((await admin('operators','POST',input)).status,409)
-    const stored=(await database.query('SELECT password_hash FROM actor_credentials WHERE actor_id=$1',[created.data.id])).rows[0]
+    assert.equal((await admin('producers','POST',{...input,email:email.toUpperCase()})).status,409)
+    const stored=await database.actor_credentials.findUniqueOrThrow({where:{actor_id:created.data.id}})
     assert.ok(stored.password_hash.startsWith('scrypt:'));assert.notEqual(stored.password_hash,password)
     assert.equal((await operator('auth/session','POST',{username:email.toUpperCase(),password})).status,200)
     const own=await operator('market/mine');assert.equal(own.data.profile.id,created.data.id);assert.equal(own.data.items.length,0)
@@ -59,6 +66,8 @@ test('cuentas, aislamiento, publicaciones, vacaciones, recomendaciones y recuper
     assert.equal((await operator('market/mine','PATCH',{schedule:{days:['mon'],opening:'15:00',closing:'10:00'}})).status,400)
     assert.equal((await operator('market/mine','PATCH',{schedule:{days:['mon'],opening:'05:00',closing:'11:00'}})).status,200)
     assert.equal((await operator('market/mine')).data.schedule.opening,'05:00')
+    assert.equal((await operator('market/mine','PATCH',{schedule:{days:['tue'],opening:'06:00',closing:'12:00'},vacation:{start:'invalid',end:'invalid',description:'Prueba'}})).status,400)
+    assert.equal((await operator('market/mine')).data.schedule.opening,'05:00')
     assert.equal((await operator('market/mine','PATCH',{vacation:{start:'2026-10-10',end:'2026-10-01',description:'Prueba',substitute:null}})).status,400)
     assert.equal((await operator('market/mine','PATCH',{vacation:{start:'2099-10-01',end:'2099-10-10',description:'Prueba',substitute:{id:second.data.id}}})).status,200)
     assert.equal((await operator('market/mine')).data.vacation.substitute.id,second.data.id)
@@ -69,7 +78,7 @@ test('cuentas, aislamiento, publicaciones, vacaciones, recomendaciones y recuper
     const used=new Set((await anonymous('market')).data.smartItems.map((x:any)=>x.product.id))
     speciesId=Array.from({length:20},(_,i)=>i+1).find(id=>!used.has(id))
     if(speciesId){
-      previousPrice=(await database.query('SELECT * FROM recommended_prices WHERE species_id=$1',[speciesId])).rows[0]
+      previousPrice=await database.recommended_prices.findUnique({where:{species_id:speciesId}})
       const smart=await admin('admin/smart','POST',{product:{id:speciesId},description:'Prueba de recomendación'});assert.equal(smart.status,200);smartId=smart.data.id
       assert.equal((await admin('admin/prices','POST',{rows:[{speciesId,price:42.75}]})).status,200)
       const savedSmart=(await anonymous('market')).data.smartItems.find((x:any)=>x.id===smartId);assert.equal(savedSmart.product.price,'$42.75')
@@ -97,8 +106,8 @@ test('cuentas, aislamiento, publicaciones, vacaciones, recomendaciones y recuper
   }finally{
     for(const actor of actors)assert.equal((await admin(`${actor.kind}/${actor.id}`,'DELETE')).status,200)
     if(smartId)await admin(`admin/smart?id=${smartId}`,'DELETE')
-    await database.query('DELETE FROM recovery_requests WHERE email=$1',[email])
-    if(speciesId){if(previousPrice)await database.query('UPDATE recommended_prices SET price=$1,updated_at=$2 WHERE species_id=$3',[previousPrice.price,previousPrice.updated_at,speciesId]);else await database.query('DELETE FROM recommended_prices WHERE species_id=$1',[speciesId])}
-    await database.end()
+    await database.recovery_requests.deleteMany({where:{email}})
+    if(speciesId){if(previousPrice)await database.recommended_prices.update({where:{species_id:speciesId},data:{price:previousPrice.price,updated_at:previousPrice.updated_at}});else await database.recommended_prices.deleteMany({where:{species_id:speciesId}})}
+    await database.$disconnect()
   }
 })

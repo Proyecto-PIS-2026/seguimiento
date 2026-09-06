@@ -14,8 +14,8 @@ export async function DELETE(request:NextRequest){
     const bySpecies=params.has('speciesId')
     const id=Number(params.get(bySpecies?'speciesId':'id'))
     if(!Number.isSafeInteger(id)||id<1)throw new HttpError(400,'Publicación inválida.')
-    const result=await getDatabase().query(`DELETE FROM publications WHERE ${bySpecies?'species_id':'id'}=$1 AND actor_id=$2`,[id,session.actorId])
-    if(!result.rowCount)throw new HttpError(404,'La publicación no existe en tu mercado.')
-    return {deleted:true,count:result.rowCount}
+    const result=await getDatabase().publications.deleteMany({ where: { actor_id: session.actorId!, ...(bySpecies ? { species_id: id } : { id: BigInt(id) }) } })
+    if(!result.count)throw new HttpError(404,'La publicación no existe en tu mercado.')
+    return {deleted:true,count:result.count}
   })
 }

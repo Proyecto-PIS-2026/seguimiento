@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { respond,requireSession,jsonBody,HttpError } from '../../../../server/http'
 import { getDatabase } from '../../../../server/database'
 import { products } from '../../../../shared'
-export async function GET(){return respond(async()=>{await requireSession(['admin']);return {items:(await getDatabase().query('SELECT species_id AS "speciesId",price FROM recommended_prices ORDER BY species_id')).rows}})}
+export async function GET(){return respond(async()=>{await requireSession(['admin']);return {items:(await getDatabase().recommended_prices.findMany({ orderBy: { species_id: 'asc' } })).map(row => ({ speciesId: row.species_id, price: row.price.toFixed(2) }))}})}
 export async function POST(request:NextRequest){return respond(async()=>{
   await requireSession(['admin'])
   const data=await jsonBody(request)
@@ -14,6 +14,11 @@ export async function POST(request:NextRequest){return respond(async()=>{
     if(!Number.isFinite(price)||price<=0||price>9_999_999_999.99||Math.abs(price*100-Math.round(price*100))>0.0001)throw new HttpError(400,'Los precios deben ser positivos y tener hasta dos decimales.')
     seen.add(speciesId);return {speciesId,price}
   })
-  const client=await getDatabase().connect()
-  try{await client.query('BEGIN');for(const row of rows)await client.query('INSERT INTO recommended_prices(species_id,price) VALUES($1,$2) ON CONFLICT(species_id) DO UPDATE SET price=EXCLUDED.price,updated_at=now()',[row.speciesId,row.price]);await client.query('COMMIT');return {updated:rows.length}}catch(error){await client.query('ROLLBACK');throw error}finally{client.release()}
-})}
+  await getDatabase().$transaction(rows.map((row: { speciesId: number; price: number }) => getDatabase().recommended_prices.upsert({
+    where: { species_id: row.speciesId },
+    create: { species_id: row.speciesId, price: row.price },
+    update: { price: row.price, updated_at: new Date() },
+  })))
+  return {updated:rows.length}
+})
+}

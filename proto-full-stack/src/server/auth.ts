@@ -15,33 +15,36 @@ export async function authenticate(username: unknown, password: unknown): Promis
   const login = username.trim().toLowerCase()
   const demo: Record<string, UserRole> = { admin: 'admin', operador: 'operator', productor: 'producer' }
   if (Object.hasOwn(demo, login) && password === login) return { role: demo[login], username: login, actorId: login === 'admin' ? undefined : demoProfiles[demo[login] as 'operator' | 'producer'].id, name: login === 'admin' ? 'Administrador' : demoProfiles[demo[login] as 'operator' | 'producer'].name }
-  const result = await getDatabase().query(`SELECT c.*, a.name FROM actor_credentials c JOIN (
-    SELECT id,name,active FROM operators UNION ALL SELECT id,name,active FROM producers
-  ) a ON a.id=c.actor_id WHERE c.email=$1 AND a.active=true`, [login])
-  const account = result.rows[0]
+  const db = getDatabase()
+  const account = await db.actor_credentials.findUnique({ where: { email: login } })
   if (!account || !await verifyPassword(password, account.password_hash)) return null
-  return { role: account.role, username: account.email, actorId: account.actor_id, name: account.name }
+  const actor = account.role === 'operator'
+    ? await db.operators.findUnique({ where: { id: account.actor_id } })
+    : await db.producers.findUnique({ where: { id: account.actor_id } })
+  if (!actor?.active) return null
+  return { role: account.role as UserRole, username: account.email, actorId: account.actor_id, name: actor.name }
 }
 export async function createSession(user: SessionUser): Promise<string> {
   const token = randomBytes(32).toString('hex')
-  await getDatabase().query('DELETE FROM sessions WHERE expires_at < now()')
-  await getDatabase().query(`INSERT INTO sessions(token_hash,role,username,actor_id,expires_at) VALUES($1,$2,$3,$4,now()+interval '8 hours')`, [tokenHash(token), user.role, user.username, user.actorId ?? null])
+  await getDatabase().sessions.deleteMany({ where: { expires_at: { lt: new Date() } } })
+  await getDatabase().sessions.create({ data: { token_hash: tokenHash(token), role: user.role, username: user.username, actor_id: user.actorId ?? null, expires_at: new Date(Date.now() + SESSION_MAX_AGE * 1000) } })
   return token
 }
 export async function getSession(): Promise<SessionUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
   if (!token) return null
-  const record = (await getDatabase().query('SELECT * FROM sessions WHERE token_hash=$1 AND expires_at>now()', [tokenHash(token)])).rows[0]
+  const record = await getDatabase().sessions.findFirst({ where: { token_hash: tokenHash(token), expires_at: { gt: new Date() } } })
   if (!record) return null
   if (record.actor_id && !Object.values(demoProfiles).some(profile => profile.id === record.actor_id && profile.role === record.role)) {
-    const actor = (await getDatabase().query(`SELECT name,email,active FROM ${record.role === 'operator' ? 'operators' : 'producers'} WHERE id=$1`, [record.actor_id])).rows[0]
+    const where = { id: record.actor_id }
+    const actor = record.role === 'operator' ? await getDatabase().operators.findUnique({ where }) : await getDatabase().producers.findUnique({ where })
     if (!actor?.active) return null
-    return { role: record.role, username: actor.email, actorId: record.actor_id, name: actor.name }
+    return { role: record.role as UserRole, username: actor.email, actorId: record.actor_id, name: actor.name }
   }
-  return { role: record.role, username: record.username, actorId: record.actor_id ?? undefined, name: record.role === 'admin' ? 'Administrador' : demoProfiles[record.role as 'operator' | 'producer'].name }
+  return { role: record.role as UserRole, username: record.username, actorId: record.actor_id ?? undefined, name: record.role === 'admin' ? 'Administrador' : demoProfiles[record.role as 'operator' | 'producer'].name }
 }
 export async function getSessionRole(): Promise<UserRole | null> { return (await getSession())?.role ?? null }
 export async function deleteSession(): Promise<void> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
-  if (token) await getDatabase().query('DELETE FROM sessions WHERE token_hash=$1', [tokenHash(token)])
+  if (token) await getDatabase().sessions.deleteMany({ where: { token_hash: tokenHash(token) } })
 }
