@@ -1,0 +1,11 @@
+name: Mostrar Repository ID
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mostrar-id:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mostrar Repository ID
+        run: echo "Repository ID = $GITHUB_REPOSITORY_ID"
