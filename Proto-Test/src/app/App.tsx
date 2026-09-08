@@ -49,6 +49,7 @@ import AbsentOperatorPage from '../features/actors/AbsentOperatorPage'
 import AdminManagementPage from '../features/admin/AdminManagementPage'
 import AdminEditorPanel from '../features/admin/AdminEditorPanel'
 import AdminSmartListPage from '../features/admin/AdminSmartListPage'
+import PriceAdjustmentPage from '../features/admin/PriceAdjustmentPage'
 import SmartListPage from '../features/board/SmartListPage'
 import RecoveryRequestsPage from '../features/admin/RecoveryRequestsPage'
 import PriceRevaluationPage from '../features/admin/PriceRevaluationPage'
@@ -81,6 +82,7 @@ const viewTitles: Record<string, string> = {
   adminSmartList: 'Administración de lista inteligente',
   adminRecovery: 'Recuperación de cuentas',
   adminRevaluation: 'Revalorización de precios',
+  adminPriceAdjustment: 'Ajuste de precios',
 }
 
 export default function App() {
@@ -278,6 +280,7 @@ export default function App() {
         {view === 'adminSmartList' && <AdminSmartListPage />}
         {view === 'adminRecovery' && <RecoveryRequestsPage items={recoveryRequests} onResolve={(id) => setRecoveryRequests((current) => current.map((item) => item.id === id ? { ...item, status: 'Resuelta' } : item))} />}
         {view === 'adminRevaluation' && <PriceRevaluationPage />}
+        {view === 'adminPriceAdjustment' && <PriceAdjustmentPage />}
       </AdminWorkspace>}
       {view === 'editPrice' && <EditPrice product={editingProduct ?? { ...products[0], ...(catalogOverrides[products[0].id] ?? {}) }} onSave={(nextProduct) => { setCatalogOverrides((current) => ({ ...current, [nextProduct.id]: nextProduct })); navigate(editReturnView) }} onCancel={() => navigate(editReturnView)} />}
       {entityDrawerStack.map((drawer) => drawer.type === 'product'

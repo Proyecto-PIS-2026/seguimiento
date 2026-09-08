@@ -3,11 +3,13 @@ import { Minus, Plus, MoveVertical } from 'lucide-react'
 import { useUiVariant } from '../variants/uiVariant'
 import { showOperationNotification } from '../../shared/feedback/operationNotifications'
 import { formatPrice } from './priceInput'
+import { usePriceAdjustment } from './priceAdjustmentSettings'
 
 type Props = { price: string; label: string; onEdit?: () => void; onAdjust?: (delta: number) => Promise<void>; onSlide?: () => void }
 
 export default function PublicationPrice({ price, label, onEdit, onAdjust, onSlide }: Props) {
   const { variant } = useUiVariant()
+  const increment = usePriceAdjustment()
   const [pending, setPending] = useState(false)
   const saving = useRef(false)
   const displayPrice = formatPrice(price)
@@ -21,9 +23,9 @@ export default function PublicationPrice({ price, label, onEdit, onAdjust, onSli
     finally { saving.current = false; setPending(false) }
   }
   if (variant === 'V2' && onAdjust) return <span className="price-stepper" aria-label={`Precio de ${label}`} aria-busy={pending}>
-    <button className="price-step-button" type="button" disabled={pending || !Number.isFinite(numericPrice) || numericPrice <= 10} aria-label={`Restar $10: ${label}`} onClick={() => adjust(-10)}><Minus size={19} /></button>
+    <button className="price-step-button" type="button" disabled={pending || !Number.isFinite(numericPrice) || numericPrice <= increment} aria-label={`Restar $${increment}: ${label}`} onClick={() => adjust(-increment)}><Minus size={19} /></button>
     {amount}
-    <button className="price-step-button" type="button" disabled={pending || !Number.isFinite(numericPrice)} aria-label={`Aumentar $10: ${label}`} onClick={() => adjust(10)}><Plus size={19} /></button>
+    <button className="price-step-button" type="button" disabled={pending || !Number.isFinite(numericPrice) || !Number.isSafeInteger(numericPrice + increment)} aria-label={`Aumentar $${increment}: ${label}`} onClick={() => adjust(increment)}><Plus size={19} /></button>
   </span>
   if (variant === 'V3' && onSlide) return <span className="price-slider-control">{amount}<button className="price-slider-trigger" type="button" onClick={onSlide} aria-label={`Deslizar precio de ${label}: ${displayPrice}`} title="Ajustar deslizando" aria-haspopup="dialog"><MoveVertical size={16} /></button></span>
   return amount

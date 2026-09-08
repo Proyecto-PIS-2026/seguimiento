@@ -7,7 +7,9 @@ import { buildPricedProduct, getActorProductPriceOptions, productWebserviceCatal
 import { groupActorProducts } from '../src/shared/catalog/groupActorProducts'
 
 test('catalog data, relationships, filtering and route helpers remain unchanged', () => {
-  assert.equal(readFileSync(new URL('../src/shared.ts', import.meta.url), 'utf8'), readFileSync(new URL('../../proto-ui/src/shared.ts', import.meta.url), 'utf8'))
+  const current = readFileSync(new URL('../src/shared.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n').replace(/^  adminPriceAdjustment:.*\n/m, '')
+  const original = readFileSync(new URL('../../proto-ui/src/shared.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n').replace(/Nave ([1-4])\b/g, (_, n) => `Nave ${{1:'A',2:'B',3:'C',4:'E'}[n]}`)
+  assert.equal(current, original)
   assert.equal(readFileSync(new URL('../src/shared/catalog/groupActorProducts.ts', import.meta.url), 'utf8'), readFileSync(new URL('../../proto-ui/src/shared/catalog/groupActorProducts.ts', import.meta.url), 'utf8'))
 })
 

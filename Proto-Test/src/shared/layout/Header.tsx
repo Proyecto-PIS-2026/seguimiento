@@ -26,7 +26,7 @@ export default function Header({ view = 'board', onNavigate, isAuthenticated, on
   ]
   const groups = [
     { title: 'Mercado', items: [{ label: 'Directorio de operadores', view: 'operators' }, { label: 'Mi mercado · Operador', view: 'provider' }, { label: 'Mi mercado · Productor', view: 'producerMarket' }, { label: 'Oferta de productores', view: 'producerBoard' }, { label: 'Directorio de productores', view: 'producers' }, { label: 'Programar vacaciones', view: 'vacations' }, { label: 'Operador ausente', view: 'absentProvider' }] },
-    { title: 'Administración', items: [{ label: 'Operadores', view: 'adminOperators' }, { label: 'Productores', view: 'adminProducers' }, { label: 'Lista inteligente', view: 'adminSmartList' }, { label: 'Recuperación de cuentas', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }] },
+    { title: 'Administración', items: [{ label: 'Operadores', view: 'adminOperators' }, { label: 'Productores', view: 'adminProducers' }, { label: 'Lista inteligente', view: 'adminSmartList' }, { label: 'Recuperación de cuentas', view: 'adminRecovery' }, { label: 'Revalorización de precios', view: 'adminRevaluation' }, { label: 'Ajuste de precios', view: 'adminPriceAdjustment' }] },
     { title: 'Cuenta y seguridad', items: [{ label: 'Ingresar', view: 'login' }, { label: 'Verificar en dos pasos', view: 'twoFactorChallenge' }, { label: 'Configurar verificación', view: 'twoFactorSetup' }, { label: 'Recuperar contraseña', view: 'recovery' }, { label: 'Restablecer contraseña', view: 'resetPassword' }] },
   ]
   const titles: Record<string, string> = { board: 'Pizarrón del mercado', provider: 'Mi mercado', producerMarket: 'Mi mercado', producerBoard: 'Oferta de productores', operators: 'Operadores', producers: 'Productores' }
@@ -44,7 +44,7 @@ export default function Header({ view = 'board', onNavigate, isAuthenticated, on
         <button onClick={() => setMenuOpen(true)}><Menu size={20} />Todas las pantallas</button>
       </nav>
       <VariantSelector />
-      <div className="sidebar-bottom"><div className="sidebar-note"><Leaf size={22} /><strong>Del campo a tu día.</strong><p>Un mercado más conectado empieza por acá.</p><button onClick={smart}>Qué está de estación <ArrowUpRight size={16} /></button></div><span className="uam-signature">UAM <span>Unidad Agroalimentaria<br />Metropolitana</span></span></div>
+      <div className="sidebar-bottom"><div className="sidebar-note"><Leaf size={22} /><strong>Del campo a tu día.</strong><p>Un mercado más conectado empieza por acá.</p><button onClick={smart}>Ver lista inteligente <ArrowUpRight size={16} /></button></div><span className="uam-signature">UAM <span>Unidad Agroalimentaria<br />Metropolitana</span></span></div>
     </aside>
     <header className="site-header workspace-topbar">
       <button className="mobile-brand" onClick={() => navigate('board')} aria-label="Mercado Hoy, inicio"><Sprout size={25} /><strong>mercado hoy.</strong></button>
@@ -54,7 +54,7 @@ export default function Header({ view = 'board', onNavigate, isAuthenticated, on
     <div className="mobile-variant-selector"><VariantSelector /></div>
     <nav className="mobile-bottom-nav" aria-label="Navegación móvil">
       <button className={view === 'board' && !isSmart ? 'selected' : ''} onClick={() => navigate('board')}><LayoutGrid size={21} /><span>Pizarrón</span></button>
-      <button className={isSmart ? 'selected' : ''} onClick={smart}><Sparkles size={21} /><span>De estación</span></button>
+      <button className={isSmart ? 'selected' : ''} onClick={smart}><Sparkles size={21} /><span>Lista inteligente</span></button>
       <button className={view === marketView ? 'selected' : ''} onClick={() => navigate(marketView)}><Store size={21} /><span>Mi mercado</span></button>
       <button aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={21} /><span>Más</span></button>
     </nav>

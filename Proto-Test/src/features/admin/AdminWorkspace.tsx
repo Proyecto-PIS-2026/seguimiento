@@ -14,6 +14,7 @@ const maintenanceItems = [
   { view: 'adminSmartList', label: 'Lista inteligente', icon: ListChecks },
   { view: 'adminRecovery', label: 'Recuperación de cuentas', icon: KeyRound },
   { view: 'adminRevaluation', label: 'Revalorización de precios', icon: FileSpreadsheet },
+  { view: 'adminPriceAdjustment', label: 'Ajuste de precios', icon: FileSpreadsheet },
 ]
 
 export default function AdminWorkspace({ activeView, children, onNavigate }: AdminWorkspaceProps) {

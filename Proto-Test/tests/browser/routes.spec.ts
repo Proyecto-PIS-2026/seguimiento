@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const routes = ['/', '/lista-inteligente', '/operadores', '/operador/pizarron-productores', '/operador/productores', '/productores/granja-santa-rosa', '/operador/mercado', '/productor/mercado', '/operador/publicar', '/ingresar', '/ingresar/2fa', '/seguridad/configurar-2fa', '/recuperar-contrasena', '/restablecer-contrasena', '/operador/vacaciones', '/operadores/ausente', '/administracion/operadores', '/administracion/productores', '/administracion/lista-inteligente', '/administracion/recuperacion-de-cuentas', '/administracion/revalorizacion-de-precios', '/productos/1/operadores', '/operador/mercado/1/editar', '/productor/mercado/1/editar']
+const routes = ['/', '/lista-inteligente', '/operadores', '/operador/pizarron-productores', '/operador/productores', '/productores/granja-santa-rosa', '/operador/mercado', '/productor/mercado', '/operador/publicar', '/ingresar', '/ingresar/2fa', '/seguridad/configurar-2fa', '/recuperar-contrasena', '/restablecer-contrasena', '/operador/vacaciones', '/operadores/ausente', '/administracion/ajuste-de-precios', '/administracion/operadores', '/administracion/productores', '/administracion/lista-inteligente', '/administracion/recuperacion-de-cuentas', '/administracion/revalorizacion-de-precios', '/productos/1/operadores', '/operador/mercado/1/editar', '/productor/mercado/1/editar']
 
 for (const width of [390, 1440]) {
   test(`all ${routes.length} original routes render without errors or overflow at ${width}px`, async ({ page }) => {
@@ -38,8 +38,8 @@ test('dependent filters stay usable on mobile', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Abrir filtros' }).click()
   const filters = page.locator('.filters.open')
-  await filters.getByRole('combobox', { name: 'Grupo', exact: true }).selectOption('Frutas de hoja caduca')
-  await filters.getByRole('combobox', { name: 'Especie', exact: true }).selectOption('Manzana')
+  await page.getByRole('combobox', { name: 'Grupo', exact: true }).selectOption('Frutas de hoja caduca')
+  await page.getByRole('combobox', { name: 'Especie', exact: true }).selectOption('Manzana')
   await filters.getByRole('combobox', { name: 'Variedad', exact: true }).selectOption('Fuji')
   await expect(page.locator('.board-product-grid > article')).toHaveCount(1)
   await filters.getByRole('button', { name: 'Limpiar filtros' }).click()

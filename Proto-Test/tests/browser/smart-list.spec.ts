@@ -23,7 +23,7 @@ test('admin updates the PDF, public buttons and open tabs follow it, and reload 
   await expect(pdf).toHaveAttribute('href', updated)
   await context.route(updated, route => route.fulfill({ contentType: 'text/html', body: 'PDF de prueba' }))
   const popup = page.waitForEvent('popup')
-  await page.getByRole('button', { name: 'De estación', exact: true }).click()
+  await page.getByRole('button', { name: 'Lista inteligente', exact: true }).click()
   await expect(await popup).toHaveURL(updated)
 })
 
