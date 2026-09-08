@@ -11,12 +11,12 @@ export const featuredProducts = [
     image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=700&q=85',
     accent: '#f3d9d6',
     operators: [
-      { name: 'Frutas del Norte', place: 'Nave 2 · Puesto 18', price: '$58', available: true },
-      { name: 'Los Aromos', place: 'Nave 1 · Puesto 42', price: '$55', available: true },
-      { name: 'Granja San José', place: 'Nave 3 · Puesto 07', price: '$60', available: true },
-      { name: 'El Trébol', place: 'Nave 2 · Puesto 31', price: '$52', available: true },
-      { name: 'Frutas del Este', place: 'Nave 4 · Puesto 09', price: '$56', available: true },
-      { name: 'Puesto La Estación', place: 'Nave 1 · Puesto 24', price: '—', available: false },
+      { name: 'Frutas del Norte', place: 'Nave B · Puesto 18', price: '$58', available: true },
+      { name: 'Los Aromos', place: 'Nave A · Puesto 42', price: '$55', available: true },
+      { name: 'Granja San José', place: 'Nave C · Puesto 07', price: '$60', available: true },
+      { name: 'El Trébol', place: 'Nave B · Puesto 31', price: '$52', available: true },
+      { name: 'Frutas del Este', place: 'Nave E · Puesto 09', price: '$56', available: true },
+      { name: 'Puesto La Estación', place: 'Nave A · Puesto 24', price: '—', available: false },
     ],
   },
   {
@@ -29,18 +29,18 @@ export const featuredProducts = [
     image: 'https://images.unsplash.com/photo-1569603343957-619e98fcfe71?auto=format&fit=crop&w=700&q=85',
     accent: '#f4d6cf',
     operators: [
-      { name: 'Puesto La Huerta', place: 'Nave 4 · Puesto 11', price: '$92', available: true },
-      { name: 'Campos del Sur', place: 'Nave 3 · Puesto 28', price: '$95', available: true },
-      { name: 'Mercado Verde', place: 'Nave 1 · Puesto 15', price: '—', available: false },
-      { name: 'La Chacra', place: 'Nave 2 · Puesto 06', price: '$90', available: true },
-      { name: 'Hortalizas Central', place: 'Nave 1 · Puesto 33', price: '$98', available: true },
-      { name: 'El Cantero', place: 'Nave 3 · Puesto 04', price: '$94', available: true },
-      { name: 'Puesto del Prado', place: 'Nave 4 · Puesto 22', price: '$96', available: true },
-      { name: 'Quinta del Sol', place: 'Nave 2 · Puesto 38', price: '$91', available: true },
-      { name: 'Distribuidora Sur', place: 'Nave 3 · Puesto 19', price: '$99', available: true },
-      { name: 'La Cosecha', place: 'Nave 1 · Puesto 02', price: '$93', available: true },
-      { name: 'Huerta Oriental', place: 'Nave 4 · Puesto 30', price: '$97', available: true },
-      { name: 'Los Tilos', place: 'Nave 2 · Puesto 14', price: '—', available: false },
+      { name: 'Puesto La Huerta', place: 'Nave E · Puesto 11', price: '$92', available: true },
+      { name: 'Campos del Sur', place: 'Nave C · Puesto 28', price: '$95', available: true },
+      { name: 'Mercado Verde', place: 'Nave A · Puesto 15', price: '—', available: false },
+      { name: 'La Chacra', place: 'Nave B · Puesto 06', price: '$90', available: true },
+      { name: 'Hortalizas Central', place: 'Nave A · Puesto 33', price: '$98', available: true },
+      { name: 'El Cantero', place: 'Nave C · Puesto 04', price: '$94', available: true },
+      { name: 'Puesto del Prado', place: 'Nave E · Puesto 22', price: '$96', available: true },
+      { name: 'Quinta del Sol', place: 'Nave B · Puesto 38', price: '$91', available: true },
+      { name: 'Distribuidora Sur', place: 'Nave C · Puesto 19', price: '$99', available: true },
+      { name: 'La Cosecha', place: 'Nave A · Puesto 02', price: '$93', available: true },
+      { name: 'Huerta Oriental', place: 'Nave E · Puesto 30', price: '$97', available: true },
+      { name: 'Los Tilos', place: 'Nave B · Puesto 14', price: '—', available: false },
     ],
   },
   {
@@ -53,10 +53,10 @@ export const featuredProducts = [
     image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=700&q=85',
     accent: '#dbe8cc',
     operators: [
-      { name: 'Importadora Rivera', place: 'Nave 2 · Puesto 03', price: '$185', available: true },
-      { name: 'El Ombú', place: 'Nave 2 · Puesto 29', price: '$188', available: true },
-      { name: 'Tropical del Plata', place: 'Nave 1 · Puesto 17', price: '$180', available: true },
-      { name: 'Distribuidora Norte', place: 'Nave 4 · Puesto 05', price: '$190', available: true },
+      { name: 'Importadora Rivera', place: 'Nave B · Puesto 03', price: '$185', available: true },
+      { name: 'El Ombú', place: 'Nave B · Puesto 29', price: '$188', available: true },
+      { name: 'Tropical del Plata', place: 'Nave A · Puesto 17', price: '$180', available: true },
+      { name: 'Distribuidora Norte', place: 'Nave E · Puesto 05', price: '$190', available: true },
     ],
   },
   {
@@ -69,22 +69,22 @@ export const featuredProducts = [
     image: 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&w=700&q=85',
     accent: '#f5e7ae',
     operators: [
-      { name: 'Tropicales UY', place: 'Nave 1 · Puesto 08', price: '$38', available: true },
-      { name: 'Distribuidora Central', place: 'Nave 4 · Puesto 36', price: '$39', available: true },
-      { name: 'Frutas del Litoral', place: 'Nave 2 · Puesto 12', price: '$36', available: true },
-      { name: 'El Ceibo', place: 'Nave 3 · Puesto 25', price: '$37', available: true },
-      { name: 'Mercado Tropical', place: 'Nave 1 · Puesto 39', price: '$39', available: true },
-      { name: 'Puesto Atlántico', place: 'Nave 4 · Puesto 18', price: '$38', available: true },
-      { name: 'La Ribera', place: 'Nave 2 · Puesto 27', price: '$37', available: true },
-      { name: 'Costa Verde', place: 'Nave 3 · Puesto 10', price: '—', available: false },
+      { name: 'Tropicales UY', place: 'Nave A · Puesto 08', price: '$38', available: true },
+      { name: 'Distribuidora Central', place: 'Nave E · Puesto 36', price: '$39', available: true },
+      { name: 'Frutas del Litoral', place: 'Nave B · Puesto 12', price: '$36', available: true },
+      { name: 'El Ceibo', place: 'Nave C · Puesto 25', price: '$37', available: true },
+      { name: 'Mercado Tropical', place: 'Nave A · Puesto 39', price: '$39', available: true },
+      { name: 'Puesto Atlántico', place: 'Nave E · Puesto 18', price: '$38', available: true },
+      { name: 'La Ribera', place: 'Nave B · Puesto 27', price: '$37', available: true },
+      { name: 'Costa Verde', place: 'Nave C · Puesto 10', price: '—', available: false },
     ],
   },
 ]
 
 export const createOperators = (price) => [
-  { name: 'Mercado Central', place: 'Nave 1 · Puesto 14', price: `$${price}`, available: true },
-  { name: 'Puesto del Prado', place: 'Nave 2 · Puesto 27', price: `$${price + 3}`, available: true },
-  { name: 'La Cosecha', place: 'Nave 3 · Puesto 09', price: `$${price + 5}`, available: true },
+  { name: 'Mercado Central', place: 'Nave A · Puesto 14', price: `$${price}`, available: true },
+  { name: 'Puesto del Prado', place: 'Nave B · Puesto 27', price: `$${price + 3}`, available: true },
+  { name: 'La Cosecha', place: 'Nave C · Puesto 09', price: `$${price + 5}`, available: true },
 ]
 
 export const additionalProducts = [
@@ -167,6 +167,7 @@ export const staticViewRoutes = {
   adminSmartList: '/administracion/lista-inteligente',
   adminRecovery: '/administracion/recuperacion-de-cuentas',
   adminRevaluation: '/administracion/revalorizacion-de-precios',
+  adminPriceAdjustment: '/administracion/ajuste-de-precios',
 }
 
 export const initialRecoveryRequests = Array.from({ length: 12 }, (_, index) => ({

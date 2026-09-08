@@ -1,3 +1,5 @@
+import PrimaryProductFilters from '../../shared/filters/PrimaryProductFilters'
+import { matchesPriceBounds } from '../../shared/filters/priceRange'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
@@ -51,6 +53,8 @@ export default function Board({ onOpenProduct, producerMode = false, items = pro
   const [currentPage, setCurrentPage] = useState<any>(1)
   const [groupFilter, setGroupFilter] = useState<any>('all')
   const [speciesFilter, setSpeciesFilter] = useState<any>('all')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
   const [priceFilter, setPriceFilter] = useState<any>('all')
   const [varietyFilter, setVarietyFilter] = useState<any>('all')
   const [presentationFilter, setPresentationFilter] = useState<any>('all')
@@ -66,22 +70,22 @@ export default function Board({ onOpenProduct, producerMode = false, items = pro
     const term = query.trim().toLocaleLowerCase('es')
     let result = term ? items.filter((product) => product.name.toLocaleLowerCase('es').includes(term)) : items
     if (activeFilter === 'Favoritos') result = result.filter((product) => favorites.includes(product.id))
-    return result.filter((product) => productMatchesFilters(product, { groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter })).sort((a, b) => {
+    return result.filter((product) => matchesPriceBounds(product.price, priceMin, priceMax) && productMatchesFilters(product, { groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter })).sort((a, b) => {
       const favoriteDifference = Number(favorites.includes(b.id)) - Number(favorites.includes(a.id))
       if (favoriteDifference) return favoriteDifference
       if (sortBy === 'priceAsc') return (Number(a.price.match(/\d+/)?.[0]) || Number.POSITIVE_INFINITY) - (Number(b.price.match(/\d+/)?.[0]) || Number.POSITIVE_INFINITY)
       if (sortBy === 'priceDesc') return (Number(b.price.match(/\d+/)?.[0]) || -1) - (Number(a.price.match(/\d+/)?.[0]) || -1)
       return a.name.localeCompare(b.name, 'es')
     })
-  }, [items, activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, query, sortBy, speciesFilter, unitFilter, varietyFilter])
+  }, [items, activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, priceMin, priceMax, query, sortBy, speciesFilter, unitFilter, varietyFilter])
 
   const pageSize = 10
   const pageCount = Math.max(1, Math.ceil(visibleProducts.length / pageSize))
   const paginatedProducts = visibleProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  useEffect(() => setCurrentPage(1), [activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, query, sortBy, speciesFilter, unitFilter, varietyFilter])
+  useEffect(() => setCurrentPage(1), [activeFilter, calibreFilter, categoryFilter, favorites, groupFilter, naveFilter, presentationFilter, priceFilter, priceMin, priceMax, query, sortBy, speciesFilter, unitFilter, varietyFilter])
 
-  const activeFilterCount = [groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter].filter((value) => value !== 'all').length
+  const activeFilterCount = [groupFilter, speciesFilter, priceFilter, varietyFilter, presentationFilter, calibreFilter, categoryFilter, naveFilter, unitFilter].filter((value) => value !== 'all').length + Number(Boolean(priceMin)) + Number(Boolean(priceMax))
 
   const toggleFavorite = (id) => {
     setFavorites((current) => { const next=current.includes(id)?current.filter((item)=>item!==id):[...current,id]; try{localStorage.setItem('uam-favorites',JSON.stringify(next))}catch{} return next })
@@ -106,7 +110,7 @@ export default function Board({ onOpenProduct, producerMode = false, items = pro
             <span className="market-count">{items.length} productos publicados</span>
           </div>
 
-          <ListFilterToolbar query={query} setQuery={setQuery} placeholder="Buscar fruta u hortaliza" searchLabel="Buscar un producto" activeFilterCount={activeFilterCount} onClear={() => { setGroupFilter('all'); setSpeciesFilter('all'); setPriceFilter('all'); setVarietyFilter('all'); setPresentationFilter('all'); setCalibreFilter('all'); setCategoryFilter('all'); setNaveFilter('all'); setUnitFilter('all'); setSortBy('name') }}>
+          <ListFilterToolbar primaryFilters={<PrimaryProductFilters groupFilter={groupFilter} setGroupFilter={setGroupFilter} speciesFilter={speciesFilter} setSpeciesFilter={setSpeciesFilter} setVarietyFilter={setVarietyFilter} priceMin={priceMin} setPriceMin={setPriceMin} priceMax={priceMax} setPriceMax={setPriceMax} />} query={query} setQuery={setQuery} placeholder="Buscar fruta u hortaliza" searchLabel="Buscar un producto" activeFilterCount={activeFilterCount} onClear={() => { setGroupFilter('all'); setSpeciesFilter('all'); setPriceFilter('all'); setPriceMin(''); setPriceMax(''); setVarietyFilter('all'); setPresentationFilter('all'); setCalibreFilter('all'); setCategoryFilter('all'); setNaveFilter('all'); setUnitFilter('all'); setSortBy('name') }}>
             <SortField value={sortBy} onChange={setSortBy} options={[{ value: 'name', label: 'Nombre' }, { value: 'priceAsc', label: 'Menor precio' }, { value: 'priceDesc', label: 'Mayor precio' }]} />
             <ProductFilterFields groupFilter={groupFilter} setGroupFilter={setGroupFilter} speciesFilter={speciesFilter} setSpeciesFilter={setSpeciesFilter} priceFilter={priceFilter} setPriceFilter={setPriceFilter} varietyFilter={varietyFilter} setVarietyFilter={setVarietyFilter} presentationFilter={presentationFilter} setPresentationFilter={setPresentationFilter} calibreFilter={calibreFilter} setCalibreFilter={setCalibreFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} naveFilter={naveFilter} setNaveFilter={setNaveFilter} unitFilter={unitFilter} setUnitFilter={setUnitFilter} />
           </ListFilterToolbar>

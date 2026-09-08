@@ -92,7 +92,7 @@ export default function Publish({ onDone }: PublishProps) {
             <label className="field"><span>Calibre</span><select defaultValue="Grande"><option>Grande</option><option>Mediano</option><option>Chico</option></select></label>
             <label className="field"><span>Categoría</span><select defaultValue="I"><option>E</option><option>I</option><option>II</option></select></label>
             <label className="field"><span>Precio</span><div className="money-input"><i>$</i><input type="number" defaultValue="58" aria-label="Precio" /><em>/ kg</em></div></label>
-            <label className="field"><span>Ubicación</span><select defaultValue="Nave 2 · Puesto 18"><option>Nave 2 · Puesto 18</option><option>Nave 1 · Puesto 42</option></select></label>
+            <label className="field"><span>Ubicación</span><select defaultValue="Nave B · Puesto 18"><option>Nave B · Puesto 18</option><option>Nave A · Puesto 42</option></select></label>
           </div>
 
           <div className="availability-control">

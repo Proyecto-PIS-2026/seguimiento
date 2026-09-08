@@ -51,6 +51,16 @@ Verified the production build, all 24 routes at mobile/desktop widths, short-vie
 
 ## Previews
 
+## 5 — Catalog controls and administrator price increment
+
+**Changes:** Naves use A, B, C and E in fixtures and selectors. Navigation says “Lista inteligente”. The catalog action reads “Agregar Producto”, and each species card has “Agregar [especie]”; both use the available width on mobile without clipping. Group, species, minimum price and maximum price stay visible; additional filters remain collapsible. Price bounds filter the actual commercial rows, including manual edits, and public board price intervals use range overlap.
+
+**Administration:** “Ajuste de precios” opens the same centered amount editor as manual price editing, with Cancelar and Confirmar. A positive integer defines both + and −, initially $10. The value persists in this browser and synchronizes its open tabs; this prototype does not provide server persistence or cross-device synchronization.
+
+**Verification:** Production build and 5 catalog/input tests passed. The 21 existing browser checks and 3 new checks passed, covering both roles, all UI variants, dependent filters, actual combination prices, administrator validation/persistence/cancellation, species preselection, and uncropped add buttons at 320–1440px. Reviewed mobile and desktop screenshots and the centered administrator editor in headless Edge.
+
+**Pending tasks:** None for this requested iteration. Changes are confined to `Proto-Test`; no commit or push was made.
+
 ## 4 — Compact cards and whole-peso price controls
 
 **Changes:** Applied the requested batches to the shared operator/producer cards. V2 now orders controls as minus, editable price, plus, photo. Step buttons use dark green with white symbols; pencil and delete controls share compact dimensions, with muted red for deletion. Commercial labels occupy the full card width, and mobile rows are approximately 66px tall (70px in V3).

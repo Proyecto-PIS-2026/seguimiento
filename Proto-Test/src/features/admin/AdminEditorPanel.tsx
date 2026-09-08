@@ -40,7 +40,7 @@ type AdminEditorPanelProps = {
 
 export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminEditorPanelProps) {
   const [name, setName] = useState<any>(item?.name ?? '')
-  const [nave, setNave] = useState<any>(item?.nave ?? 'Nave 1')
+  const [nave, setNave] = useState<any>(item?.nave ?? 'Nave A')
   const [puesto, setPuesto] = useState<any>(item?.puesto ?? '')
   const [email, setEmail] = useState<any>(item?.email ?? '')
   const [responsible, setResponsible] = useState<any>(item?.responsible ?? '')
@@ -71,7 +71,7 @@ export default function AdminEditorPanel({ kind, item, onClose, onSave }: AdminE
           <div className="field-grid">
             <label className="field wide"><span>Nombre</span><input value={name} onChange={(event) => setName(event.target.value)} required /></label>
             <>
-              {kind === 'operator' && <><label className="field"><span>Nave</span><select value={nave} onChange={(event) => setNave(event.target.value)} required>{['Nave 1', 'Nave 2', 'Nave 3', 'Nave 4'].map((value) => <option key={value}>{value}</option>)}</select></label><label className="field"><span>Puesto</span><input value={puesto} onChange={(event) => setPuesto(event.target.value)} required /></label></>}
+              {kind === 'operator' && <><label className="field"><span>Nave</span><select value={nave} onChange={(event) => setNave(event.target.value)} required>{['Nave A', 'Nave B', 'Nave C', 'Nave E'].map((value) => <option key={value}>{value}</option>)}</select></label><label className="field"><span>Puesto</span><input value={puesto} onChange={(event) => setPuesto(event.target.value)} required /></label></>}
               <label className="field wide"><span>Email</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
               <label className="field wide"><span>Persona responsable</span><input value={responsible} onChange={(event) => setResponsible(event.target.value)} required /></label>
               <label className="field"><span>WhatsApp de contacto</span><input type="tel" value={whatsapp} onChange={(event) => setWhatsapp(event.target.value)} required /></label>

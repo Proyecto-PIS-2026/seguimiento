@@ -1,9 +1,13 @@
+import { publishedPriceOptions } from '../catalog/publishedPriceOptions'
+import { matchesPriceBounds } from '../filters/priceRange'
 import { groupActorProducts } from '../catalog/groupActorProducts'
-import { Image as ImageIcon, Pencil, Plus, Trash2, ChevronRight } from 'lucide-react'
-import { fallbackProductImage, getActorPublishedProducts, getActorProductPriceOptions } from '../../shared'
+import { Image as ImageIcon, Pencil, Trash2, ChevronRight } from 'lucide-react'
+import { fallbackProductImage, getActorPublishedProducts, productWebserviceCatalog } from '../../shared'
 import PublicationPrice from '../../features/products/PublicationPrice'
 
 type ActorPublishedProductListProps = {
+  priceMin?: string
+  priceMax?: string
   entry?: any
   role?: any
   items?: any
@@ -24,15 +28,12 @@ type ActorPublishedProductListProps = {
   usePublishedVariantPhotos?: any
 }
 
-export default function ActorPublishedProductList({ entry, role, items, displayItems, containerRef, emptyMessage, onOpenProduct, variantOverrides = {}, removedVariantKeys = [], onEditPrice, onEditVariant, onAdjustPrice, onSlidePrice, onRemoveVariant, onAddVariant, onRemoveProduct, onOpenVariantMedia, usePublishedVariantPhotos = false }: ActorPublishedProductListProps) {
+export default function ActorPublishedProductList({ priceMin = '', priceMax = '', entry, role, items, displayItems, containerRef, emptyMessage, onOpenProduct, variantOverrides = {}, removedVariantKeys = [], onEditPrice, onEditVariant, onAdjustPrice, onSlidePrice, onRemoveVariant, onAddVariant, onRemoveProduct, onOpenVariantMedia, usePublishedVariantPhotos = false }: ActorPublishedProductListProps) {
   const allActorProducts = displayItems ? [] : getActorPublishedProducts(entry, role)
   const actorProducts = displayItems ? [] : groupActorProducts(items ?? allActorProducts)
   const normalizedItems = displayItems ?? actorProducts.map((product, index) => {
-    const publishedActor = product.operators?.find((operator) => operator.name === entry.name) ?? entry
-    const stableProductIndex = allActorProducts.findIndex((actorProduct) => actorProduct.id === product.id)
-    const priceOptions = getActorProductPriceOptions(product, { ...publishedActor, available: true, price: publishedActor.price ?? entry.price ?? product.price }, stableProductIndex < 0 ? product.actorProductIndex ?? index : stableProductIndex)
-      .filter((option) => !removedVariantKeys.includes(`${product.id}:${option.key}`))
-      .map((option, optionIndex) => ({ ...option, photo: option.photo ?? (!product.persisted && usePublishedVariantPhotos && ((product.id * 7 + optionIndex * 3) % 5 < 2) ? product.image : null), ...(variantOverrides[`${product.id}:${option.key}`] ?? {}) }))
+    const speciesName = productWebserviceCatalog.find(definition => definition.id === (product.sourceProductId ?? product.id))?.species ?? product.name
+    const priceOptions = publishedPriceOptions(product, entry, role, variantOverrides, removedVariantKeys, usePublishedVariantPhotos, index).filter(option => matchesPriceBounds(option.price, priceMin, priceMax))
 
     return {
       key: product.id,
@@ -40,7 +41,7 @@ export default function ActorPublishedProductList({ entry, role, items, displayI
       title: product.name,
       ariaLabel: `Abrir ${product.name}`,
       onOpen: () => onOpenProduct?.(product, role),
-      actions: (onAddVariant || onRemoveProduct) ? <>{onAddVariant && <button type="button" onClick={(event) => { event.stopPropagation(); onAddVariant(product) }} aria-label={`Agregar combinación de ${product.name}`}><Plus size={14} /></button>}{onRemoveProduct && <button className="remove" type="button" onClick={(event) => { event.stopPropagation(); onRemoveProduct(product) }} aria-label={`Eliminar ${product.name}`}><Trash2 size={14} /></button>}</> : null,
+      actions: (onAddVariant || onRemoveProduct) ? <>{onAddVariant && <button className="add-species-action" type="button" onClick={(event) => { event.stopPropagation(); onAddVariant(product) }}>Agregar {speciesName}</button>}{onRemoveProduct && <button className="remove" type="button" onClick={(event) => { event.stopPropagation(); onRemoveProduct(product) }} aria-label={`Eliminar ${product.name}`}><Trash2 size={14} /></button>}</> : null,
       rows: priceOptions.map((option) => ({
         key: option.key,
         label: `${option.variety} · ${option.presentation} · Cat. ${option.category} · ${option.calibre} · ${option.unit}`,

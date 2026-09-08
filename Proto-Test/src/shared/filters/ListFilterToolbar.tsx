@@ -36,11 +36,12 @@ type ListFilterToolbarProps = {
   searchLabel?: any
   activeFilterCount?: any
   onClear?: any
+  primaryFilters?: React.ReactNode
   children?: any
   className?: any
 }
 
-export default function ListFilterToolbar({ query, setQuery, placeholder, searchLabel, activeFilterCount = 0, onClear, children, className = '' }: ListFilterToolbarProps) {
+export default function ListFilterToolbar({ query, setQuery, placeholder, searchLabel, activeFilterCount = 0, onClear, primaryFilters, children, className = '' }: ListFilterToolbarProps) {
   const [filtersOpen, setFiltersOpen] = useState<any>(false)
 
   return (
@@ -57,6 +58,8 @@ export default function ListFilterToolbar({ query, setQuery, placeholder, search
           {activeFilterCount > 0 && <b>{activeFilterCount}</b>}
         </button>
       </div>
+      {primaryFilters}
+      {primaryFilters && activeFilterCount > 0 && !filtersOpen && <button className="clear primary-filter-clear" type="button" onClick={onClear}>Limpiar filtros</button>}
       <div className={filtersOpen ? 'filters open' : 'filters'} aria-label="Filtros del listado" aria-hidden={!filtersOpen} inert={!filtersOpen}>
         {children}
         <button className="clear" type="button" onClick={onClear}>Limpiar filtros</button>
