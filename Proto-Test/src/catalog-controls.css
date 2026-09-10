@@ -9,11 +9,11 @@
   flex: 1 1 auto; font-size: 14px; line-height: 1.35; white-space: normal; overflow-wrap: anywhere;
 }
 .actor-product-list .actor-product-heading-actions button.remove { flex: 0 0 38px; }
-.primary-product-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-.primary-product-filters label { display: grid; gap: 5px; min-width: 0; }
-.primary-product-filters label > span { font-size: 12px; color: var(--palette-green-dark); }
+.primary-product-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.primary-product-filters label { display: grid; gap: 4px; min-width: 0; }
+.primary-product-filters label > span { font-size: 12px; white-space: nowrap; color: var(--palette-green-dark); }
 .primary-product-filters select, .primary-product-filters input {
-  width: 100%; min-width: 0; height: 44px; padding: 8px 10px; border: 1px solid var(--palette-gray);
+  width: 100%; min-width: 0; height: 36px; padding: 6px 8px; border: 1px solid var(--palette-gray);
   border-radius: 9px; background: var(--palette-background); color: var(--palette-ink); font: inherit; font-size: 14px;
 }
 .primary-product-filters :is(input, select):focus-visible, .adjustment-amount:focus-visible { outline: 2px solid var(--palette-green); outline-offset: 2px; }
@@ -29,6 +29,9 @@
   .actor-product-list .actor-product-title { grid-column: 2; min-width: 0; }
   .actor-product-list .actor-product-heading-actions { grid-column: 1 / -1; display: flex; width: 100%; flex-direction: row; gap: 8px; }
   .actor-product-list .actor-product-heading-actions button.add-species-action { flex: 1; }
-  .primary-product-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .primary-product-filters select, .primary-product-filters input { font-size: 16px; }
+  .primary-product-filters { grid-template-columns: 1.1fr 1.1fr .9fr .9fr; gap: 6px; }
+  .primary-product-filters label > span { font-size: 10px; }
+  .primary-product-filters select, .primary-product-filters input { padding: 5px 4px; font-size: 12px; }
+  .primary-product-filters input { font-size: 16px; appearance: textfield; }
+  .primary-product-filters input::-webkit-inner-spin-button, .primary-product-filters input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 }
