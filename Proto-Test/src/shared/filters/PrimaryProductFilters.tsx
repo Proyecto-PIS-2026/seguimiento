@@ -15,8 +15,8 @@ export default function PrimaryProductFilters({ groupFilter, setGroupFilter, spe
   return <div className="primary-product-filters">
     <label><span>Grupo</span><select value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setSpeciesFilter('all'); setVarietyFilter('all') }}><option value="all">Todos</option>{groups.map(value => <option key={value}>{value}</option>)}</select></label>
     <label><span>Especie</span><select value={speciesFilter} onChange={event => { setSpeciesFilter(event.target.value); setVarietyFilter('all') }}><option value="all">Todas</option>{species.map(value => <option key={value}>{value}</option>)}</select></label>
-    <label><span>Precio mínimo</span><input type="number" inputMode="numeric" min="0" step="1" placeholder="$ Mín." value={priceMin} onChange={event => setPriceMin(event.target.value)} aria-invalid={invalidRange} /></label>
-    <label><span>Precio máximo</span><input type="number" inputMode="numeric" min="0" step="1" placeholder="$ Máx." value={priceMax} onChange={event => setPriceMax(event.target.value)} aria-invalid={invalidRange} /></label>
+    <label><span>Precio mín.</span><input aria-label="Precio mínimo" type="number" inputMode="numeric" min="0" step="1" placeholder="$ Mín." value={priceMin} onChange={event => setPriceMin(event.target.value)} aria-invalid={invalidRange} /></label>
+    <label><span>Precio máx.</span><input aria-label="Precio máximo" type="number" inputMode="numeric" min="0" step="1" placeholder="$ Máx." value={priceMax} onChange={event => setPriceMax(event.target.value)} aria-invalid={invalidRange} /></label>
     {invalidRange && <p role="alert">El mínimo no puede superar el máximo.</p>}
   </div>
 }
